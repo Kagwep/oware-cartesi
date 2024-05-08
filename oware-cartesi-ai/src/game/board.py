@@ -11,7 +11,7 @@ class Board:
             name = f"House{str(i)}"
             seeds = list(f"seed{str((i*4)+j)}" for j in range(1, 5))
             seeds_number = len(seeds)
-            house = House(name, seeds, seeds_number)
+            house = House(i, seeds, seeds_number)
             self.board[name] = house
 
 
@@ -23,7 +23,7 @@ class Board:
         return [house.seeds_number for house in self.board.values()]
 
     def visual_board(self, player):
-        board = [f"{house.name} > {house.seeds_number}|  " for house in self.board.values()]
+        board = [f"House{house.house_number} > {house.seeds_number}|  " for house in self.board.values()]
 
         if 'House1' in player.houses:
             row_one = f'Opponent Houses: {"".join(board[6:])}'
