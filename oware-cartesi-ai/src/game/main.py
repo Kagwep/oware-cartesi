@@ -12,6 +12,8 @@ game = GamePlay()
 
 initial_board_state = game.game_init(player_one,player_two,player_turn)
 
+
+
 while game.state.is_in_progress():
 
     print(f"{player_turn.name} Select House")
@@ -23,12 +25,21 @@ while game.state.is_in_progress():
     print(row_one)
     print(row_two)
     
-    selected_house = input('Enter Number of Houses: ')
+    selected_house =  game.get_selected_house(player_turn)
 
-    selected_house = f'House{selected_house}'
+    print(game.board.get_seeds())
 
-    if selected_house not in player_turn.houses:
-        print("Select house in your houses: ")
+
+    validity = game.is_selected_house_valid(selected_house)
+
+    print(validity)
+
+
+
+    
+
+
+    
 
 
 
