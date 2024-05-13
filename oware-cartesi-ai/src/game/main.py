@@ -30,10 +30,6 @@ while game.state.is_in_progress():
     print(game.board.get_seeds())
 
 
-    validity = game.is_selected_house_valid(selected_house)
-
-    print(validity)
-
 
 
     

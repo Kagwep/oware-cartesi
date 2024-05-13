@@ -6,7 +6,6 @@ class House:
         self.seeds_number = seeds_number
 
 
-
     def get_house(self):
         return {
             'house_number': self.house_number,
