@@ -22,22 +22,37 @@ class GamePlay():
         self.state = state
 
         return state.get_board_state()
+    
+    def check_number_of_seeds_capture(self,seeds,remainder_houses):
+        maximum_seed_count = max(seeds)
+        minimum_seed_count = min(seeds)
+        max_in_remainders = max(remainder_houses)
+
+        can_capture_all = True if (maximum_seed_count > 1 and maximum_seed_count <= 3) and (minimum_seed_count > 1 and minimum_seed_count <= 3) else False
+
+        if max_in_remainders == 0 and can_capture_all:
+            return False
+        else:
+            return True
 
 
     def is_move_valid(self,seeds,seeds_index):
-
         player = self.state.get_player_turn()
-        
         opponent_houses = PLAYER_ONE_HOUSES if player.houses == PLAYER_TWO_HOUSES else PLAYER_TWO_HOUSES
 
-        if 'House1' in opponent_houses:
+        if 'House1' in opponent_houses: 
+            opponent_seeds = seeds[:6]
+            seeds_in_scope = opponent_seeds[seeds_index:]
+            remainder_houses = opponent_seeds - seeds_in_scope
+            move_validity  = self.check_number_of_seeds_capture(seeds_in_scope,remainder_houses)
+            return move_validity
 
-            pass 
-
-        # TODO the aim is to get the remaining 
-
-
-        
+        else:
+            opponent_seeds = seeds[6:]
+            seeds_in_scope = opponent_seeds[seeds_index-6:]
+            remainder_houses = opponent_seeds - seeds_in_scope
+            move_validity  = self.check_number_of_seeds_capture(seeds_in_scope,remainder_houses)
+            return move_validity
 
 
     def is_selected_house_valid(self, selected_house):
