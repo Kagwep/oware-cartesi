@@ -9,9 +9,8 @@ class Board:
     def create_board(self):
         for i in range(1, NUMBER_OF_HOUSES + 1):
             name = f"House{str(i)}"
-            seeds = list(f"seed{str((i*4)+j)}" for j in range(1, 5))
-            seeds_number = len(seeds)
-            house = House(i, seeds, seeds_number)
+            seeds_number = 4
+            house = House(i, seeds_number)
             self.board[name] = house
 
 
@@ -34,6 +33,8 @@ class Board:
 
         return row_one, row_two
 
+    def update_board(self,board):
+        self.board = board
 
 
 

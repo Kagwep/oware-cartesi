@@ -1,6 +1,6 @@
 from board import Board
 from state import State
-from constants import NUMBER_OF_HOUSES, PLAYER_ONE_HOUSES , PLAYER_TWO_HOUSES
+from constants import NUMBER_OF_HOUSES, PLAYER_ONE_HOUSES , PLAYER_TWO_HOUSES,HOUSES
 
 
 class GamePlay():
@@ -23,36 +23,38 @@ class GamePlay():
 
         return state.get_board_state()
     
-    def check_number_of_seeds_capture(self,seeds,remainder_houses):
-        maximum_seed_count = max(seeds)
-        minimum_seed_count = min(seeds)
+    def check_seeds_in_scope_capture(self, seeds_in_scope, remainder_houses):
+        maximum_seed_count = max(seeds_in_scope)
+        minimum_seed_count = min(seeds_in_scope)
         max_in_remainders = max(remainder_houses)
 
-        can_capture_all = True if (maximum_seed_count > 1 and maximum_seed_count <= 3) and (minimum_seed_count > 1 and minimum_seed_count <= 3) else False
+        seed_count = sum(1 for seed_number in seeds_in_scope if seed_number > 0)
+        if seed_count == 1:
+            return True
+
+        can_capture_all = 1 < maximum_seed_count <= 3 and 1 < minimum_seed_count <= 3
 
         if max_in_remainders == 0 and can_capture_all:
             return False
         else:
             return True
 
-
-    def is_move_valid(self,seeds,seeds_index):
+    def is_move_valid(self, seeds, seeds_index):
         player = self.state.get_player_turn()
         opponent_houses = PLAYER_ONE_HOUSES if player.houses == PLAYER_TWO_HOUSES else PLAYER_TWO_HOUSES
 
-        if 'House1' in opponent_houses: 
+        if 'House1' in opponent_houses:
             opponent_seeds = seeds[:6]
             seeds_in_scope = opponent_seeds[seeds_index:]
-            remainder_houses = opponent_seeds - seeds_in_scope
-            move_validity  = self.check_number_of_seeds_capture(seeds_in_scope,remainder_houses)
-            return move_validity
-
+            remainder_houses = opponent_seeds[:seeds_index]
         else:
             opponent_seeds = seeds[6:]
             seeds_in_scope = opponent_seeds[seeds_index-6:]
-            remainder_houses = opponent_seeds - seeds_in_scope
-            move_validity  = self.check_number_of_seeds_capture(seeds_in_scope,remainder_houses)
-            return move_validity
+            remainder_houses = opponent_seeds[:seeds_index-6]
+
+        move_validity = self.check_seeds_in_scope_capture(seeds_in_scope, remainder_houses)
+        return move_validity
+
 
 
     def is_selected_house_valid(self, selected_house):
@@ -65,18 +67,37 @@ class GamePlay():
         else:
             return True
         
-    def capture_seeds(self,seeds,seeds_increamented_to_count,seeds_index,captured,):
+    def capture_seeds(self,seeds,seeds_increamented_to_count,seeds_index,captured):
 
         captured += seeds_increamented_to_count
+        seeds[seeds_index] = 0
         
         previous_house_index = (seeds_index -1) % NUMBER_OF_HOUSES
 
+        player = self.state.get_player_turn()
+
+        opponent_houses = PLAYER_ONE_HOUSES if player.houses == PLAYER_TWO_HOUSES else PLAYER_TWO_HOUSES
+
+        previous_house_number = previous_house_index + 1
+
+        house_to_check = f'House{previous_house_number}'
+
+        if house_to_check not in opponent_houses:
+            return seeds,captured
         
+        seeds_increamented_to_count = seeds[previous_house_index]
         
+        if seeds_increamented_to_count == 1 or seeds_increamented_to_count == 4:
+            return seeds,captured
+        else:
+            
+            self.capture_seeds(self,seeds,seeds_increamented_to_count,previous_house_index,captured)
+
+
         
     def check_capture(self,last_seed_count,house,seeds,seeds_index):
 
-        player = self.state.get_player_turn
+        player = self.state.get_player_turn()
 
         player_house = True if f'House{house.house_number}' in player.houses else False
 
@@ -95,6 +116,8 @@ class GamePlay():
 
     def move(self,seeds,house_index):
         # Get the seed count at the house_index and set that count to zero
+
+        
         value = seeds[house_index]
         seeds[house_index] = 0
         
@@ -130,15 +153,19 @@ class GamePlay():
 
         seeds,seeds_increamented_to_count,seeds_index = self.move(seeds,house_index)
 
-        capture_made = self.check_capture(seeds_increamented_to_count,house)
+        capture_made_check = self.check_capture(seeds_increamented_to_count,house,seeds,seeds_index)
 
         captured = 0 
 
-        if capture_made:
-            seeds,captured = self.capture(seeds,seeds_increamented_to_count,seeds_index,captured)
+        if capture_made_check:
+            seeds,captured = self.capture_seeds(seeds,seeds_increamented_to_count,seeds_index,captured,house)
         else:
             seeds = seeds
             captured = captured
+
+        return seeds,captured
+    
+    
 
 
         
@@ -150,23 +177,30 @@ class GamePlay():
 
         selected_house = input('Enter Number of House: ')
 
+
         selected_house = f'House{selected_house}'
+
+        if selected_house not in HOUSES:
+            
+            print("Please select a valid house ... ")
+
+            selected_house = self.get_selected_house(player_turn)
 
         house_selected_has_seeds = self.is_selected_house_valid(selected_house)
         
+        if not house_selected_has_seeds:
+
+            print("House selected has no seeds please choose another house ...")
+
+            selected_house = self.get_selected_house(player_turn)
+
 
         if selected_house not in player_turn.houses :
 
-            print("Select house in your houses... ")
+            print("Please select house in your houses... ")
 
-            self.get_selected_house(player_turn)
+            selected_house = self.get_selected_house(player_turn)
 
-
-        if not house_selected_has_seeds:
-
-            print("House selected has no seeds")
-
-            self.get_selected_house(player_turn)
 
         return selected_house
 

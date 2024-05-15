@@ -27,7 +27,20 @@ while game.state.is_in_progress():
     
     selected_house =  game.get_selected_house(player_turn)
 
-    print(game.board.get_seeds())
+    seeds,captured = game.make_move(selected_house)
+
+    print(seeds)
+
+    print(captured)
+
+    game.state.update_board_state(seeds)
+
+    game.state.change_turn(player_turn)
+
+    player_turn = game.state.get_player_turn()
+
+    
+    
 
 
 
