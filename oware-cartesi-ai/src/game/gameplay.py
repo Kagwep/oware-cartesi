@@ -24,9 +24,13 @@ class GamePlay():
         return state.get_board_state()
     
     def check_seeds_in_scope_capture(self, seeds_in_scope, remainder_houses):
-        maximum_seed_count = max(seeds_in_scope)
+
+        if len(seeds_in_scope) == 0:
+            return True
+        
+        maximum_seed_count = max(seeds_in_scope) 
         minimum_seed_count = min(seeds_in_scope)
-        max_in_remainders = max(remainder_houses)
+        max_in_remainders = max(remainder_houses) if len(remainder_houses) > 0 else 0
 
         seed_count = sum(1 for seed_number in seeds_in_scope if seed_number > 0)
         if seed_count == 1:
@@ -45,12 +49,12 @@ class GamePlay():
 
         if 'House1' in opponent_houses:
             opponent_seeds = seeds[:6]
-            seeds_in_scope = opponent_seeds[seeds_index:]
-            remainder_houses = opponent_seeds[:seeds_index]
+            remainder_houses = opponent_seeds[seeds_index:]
+            seeds_in_scope  = opponent_seeds[:seeds_index]
         else:
             opponent_seeds = seeds[6:]
-            seeds_in_scope = opponent_seeds[seeds_index-6:]
-            remainder_houses = opponent_seeds[:seeds_index-6]
+            remainder_houses = opponent_seeds[seeds_index-6:]
+            seeds_in_scope = opponent_seeds[:seeds_index-6]
 
         move_validity = self.check_seeds_in_scope_capture(seeds_in_scope, remainder_houses)
         return move_validity
@@ -87,11 +91,11 @@ class GamePlay():
         
         seeds_increamented_to_count = seeds[previous_house_index]
         
-        if seeds_increamented_to_count == 1 or seeds_increamented_to_count == 4:
-            return seeds,captured
+        if seeds_increamented_to_count == 2 or seeds_increamented_to_count == 3:
+             self.capture_seeds(seeds,seeds_increamented_to_count,previous_house_index,captured)
         else:
+            return seeds,captured
             
-            self.capture_seeds(self,seeds,seeds_increamented_to_count,previous_house_index,captured)
 
 
         
@@ -158,7 +162,7 @@ class GamePlay():
         captured = 0 
 
         if capture_made_check:
-            seeds,captured = self.capture_seeds(seeds,seeds_increamented_to_count,seeds_index,captured,house)
+            seeds,captured = self.capture_seeds(seeds,seeds_increamented_to_count,seeds_index,captured)
         else:
             seeds = seeds
             captured = captured

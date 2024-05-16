@@ -48,7 +48,8 @@ class State:
                 raise KeyError(f"{house_name} does not exist on the board.")
             
         self.board_state.update_board(board)
-    
+
+
 
 
 

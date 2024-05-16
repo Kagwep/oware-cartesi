@@ -19,3 +19,6 @@ class Player:
     
     def get_player_houses(self):
         return self.houses
+    
+    
+    

@@ -22,13 +22,15 @@ class Board:
         return [house.seeds_number for house in self.board.values()]
 
     def visual_board(self, player):
-        board = [f"House{house.house_number} > {house.seeds_number}|  " for house in self.board.values()]
+        board = [f"House{house.house_number} > {house.seeds_number} |  " for house in self.board.values()]
+        print("      ")
+        print("Its your Turn: ", player.name, " -> Select a house ....")
 
         if 'House1' in player.houses:
             row_one = f'Opponent Houses: {"".join(board[6:][::-1])}'
-            row_two = f'Your Houses:     {"".join(board[:6])}'
+            row_two = f'Your Houses:     {"".join(board[:6])}       you have captured {player.captured}'
         else:
-            row_one = f'Your Houses:     {"".join(board[6:][::-1])}'
+            row_one = f'Your Houses:     {"".join(board[6:][::-1])} you have captured {player.captured}'
             row_two = f'Opponent Houses: {"".join(board[:6])}'
 
         return row_one, row_two
