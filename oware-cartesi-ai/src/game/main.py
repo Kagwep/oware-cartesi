@@ -38,9 +38,9 @@ while game.state.is_in_progress():
     game.state.update_board_state(seeds)
 
     if player_turn == player_two and captured > 0:
-        player_two.captured = captured
+        player_two.captured += captured
     elif player_turn == player_one and captured > 0:
-        player_one.captured = captured
+        player_one.captured += captured
 
     game.state.change_turn(player_turn)
 

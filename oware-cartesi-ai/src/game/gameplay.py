@@ -92,7 +92,7 @@ class GamePlay():
         seeds_increamented_to_count = seeds[previous_house_index]
         
         if seeds_increamented_to_count == 2 or seeds_increamented_to_count == 3:
-             self.capture_seeds(seeds,seeds_increamented_to_count,previous_house_index,captured)
+             return self.capture_seeds(seeds,seeds_increamented_to_count,previous_house_index,captured)
         else:
             return seeds,captured
             
@@ -103,9 +103,11 @@ class GamePlay():
 
         player = self.state.get_player_turn()
 
+
         player_house = True if f'House{house.house_number}' in player.houses else False
 
-        if last_seed_count == 2 or last_seed_count == 3 and not player_house:
+
+        if (last_seed_count == 2 or last_seed_count == 3) and not player_house:
 
             capture_move_valid = self.is_move_valid(seeds,seeds_index)
 
@@ -159,7 +161,8 @@ class GamePlay():
 
         capture_made_check = self.check_capture(seeds_increamented_to_count,house,seeds,seeds_index)
 
-        captured = 0 
+        captured = 0
+      
 
         if capture_made_check:
             seeds,captured = self.capture_seeds(seeds,seeds_increamented_to_count,seeds_index,captured)
@@ -167,6 +170,7 @@ class GamePlay():
             seeds = seeds
             captured = captured
 
+        
         return seeds,captured
     
     
