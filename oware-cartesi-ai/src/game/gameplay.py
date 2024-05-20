@@ -99,13 +99,14 @@ class GamePlay():
 
 
         
-    def check_capture(self,last_seed_count,house,seeds,seeds_index):
+    def check_capture(self,last_seed_count,seeds,seeds_index):
 
         player = self.state.get_player_turn()
 
+        player_house = True if f'House{seeds_index + 1}' in player.houses else False
 
-        player_house = True if f'House{house.house_number}' in player.houses else False
-
+        print(last_seed_count)
+        print(player_house)
 
         if (last_seed_count == 2 or last_seed_count == 3) and not player_house:
 
@@ -159,7 +160,7 @@ class GamePlay():
 
         seeds,seeds_increamented_to_count,seeds_index = self.move(seeds,house_index)
 
-        capture_made_check = self.check_capture(seeds_increamented_to_count,house,seeds,seeds_index)
+        capture_made_check = self.check_capture(seeds_increamented_to_count,seeds,seeds_index)
 
         captured = 0
       
