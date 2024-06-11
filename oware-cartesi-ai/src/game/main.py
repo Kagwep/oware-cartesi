@@ -1,7 +1,8 @@
 from player import Player
 from gameplay import GamePlay
 from constants import PLAYER_ONE_HOUSES,PLAYER_TWO_HOUSES
-
+from oware_moves import OwareMoves
+from oware_model import OwareModel
 
 player_one = Player('agent',PLAYER_ONE_HOUSES,0)
 player_two = Player('opponent',PLAYER_TWO_HOUSES,0)
@@ -11,7 +12,9 @@ player_turn = player_one
 game = GamePlay()
 
 initial_board_state = game.game_init(player_one,player_two,player_turn)
+oware_moves = OwareMoves()
 
+oware_model = OwareModel()
 
 
 while game.state.is_in_progress():
@@ -25,14 +28,17 @@ while game.state.is_in_progress():
     print(row_two)
     print("      ")
   
+    oware_moves.legal_moves_generator(game,player_turn)
+    move_selected = oware_moves.move_selector(model)
+
     
     selected_house =  game.get_selected_house(player_turn)
 
-    print("      ")
+    print("      ",selected_house)
 
     seeds,captured = game.make_move(selected_house)
 
-    print(seeds)
+   # print(seeds)
 
 
     game.state.update_board_state(seeds)
