@@ -44,7 +44,7 @@ class OwareMoves(object):
         seeds_state = copy.deepcopy(seeds)
         # Check the condition to determine which row to select from the result_array
 
-        player_row = 1 if self.player_turn != '' and 'House1' in player.houses else 0
+        player_row = 1 if 'House1' in player.houses else 0
  
         # Extract the selected row from the board_state
         player_seeds = player_seeds
@@ -69,11 +69,11 @@ class OwareMoves(object):
         return moves
 
     def legal_moves_generator(self,game,player):
-
+        board = game.board.get_board()
         current_board_state,player_turn = game.state.board_state, game.state.players_turn
         self.player_turn = player_turn
-        seeds = self.game.board.get_seeds()
-        player = self.state.get_player_turn()
+        seeds = game.board.get_seeds()
+        player = game.state.get_player_turn()
         opponent_houses = PLAYER_ONE_HOUSES if player.houses == PLAYER_TWO_HOUSES else PLAYER_TWO_HOUSES
 
         if 'House1' in opponent_houses:
@@ -84,7 +84,7 @@ class OwareMoves(object):
             player_seeds = seeds[:6]
             
 
-        moves = self.possible_moves(seeds,opponent_seeds, player_seeds,player)
+        moves = self.possible_moves(seeds,opponent_seeds, player_seeds,player,board)
 
         self.legal_moves_dict = moves
 
