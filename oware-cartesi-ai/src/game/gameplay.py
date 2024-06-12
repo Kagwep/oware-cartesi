@@ -215,3 +215,6 @@ class GamePlay():
 
 
     
+    def check_game_outcome_status(self):
+        result = self.state.check_win()
+        return result

@@ -8,7 +8,8 @@ class State:
         self.inprogress = False
         self.player_one = player_one
         self.player_two = player_two
-        self.result = 3
+        self.result = None
+        self.seeds_needed_to_win = 24
 
 
     def get_board_state(self):
@@ -50,7 +51,21 @@ class State:
         self.board_state.update_board(board)
 
 
+    def check_win(self):
+        if self.player_one.captured > self.seeds_needed_to_win:
+            self.result = 1  # Player one wins
+            self.inprogress = False
+        elif self.player_two.captured > self.seeds_needed_to_win:
+            self.result = 2  # Player two wins
+            self.inprogress = False
+        elif self.player_one.captured == self.seeds_needed_to_win and self.player_two.captured == self.seeds_needed_to_win:
+            self.result = 0  # Draw
+            self.inprogress = False
+        else:
+            self.result = None  # Game still in progress
+            self.inprogress = True
 
+        return self.result
 
 
     

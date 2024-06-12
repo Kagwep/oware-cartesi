@@ -29,3 +29,6 @@ class OwareModel:
     
     def summary(self):
         return self.model.summary()
+    
+    def get_model(self):
+        return self.model

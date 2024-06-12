@@ -16,6 +16,7 @@ oware_moves = OwareMoves()
 
 oware_model = OwareModel()
 
+train_model = False
 
 while game.state.is_in_progress():
 
@@ -29,7 +30,7 @@ while game.state.is_in_progress():
     print("      ")
   
     oware_moves.legal_moves_generator(game,player_turn)
-    move_selected = oware_moves.move_selector(model)
+    move_selected = oware_moves.move_selector(oware_model.get_model())
 
     
     selected_house =  game.get_selected_house(player_turn)
@@ -38,9 +39,6 @@ while game.state.is_in_progress():
 
     seeds,captured = game.make_move(selected_house)
 
-   # print(seeds)
-
-
     game.state.update_board_state(seeds)
 
     if player_turn == player_two and captured > 0:
@@ -48,9 +46,20 @@ while game.state.is_in_progress():
     elif player_turn == player_one and captured > 0:
         player_one.captured += captured
 
-    game.state.change_turn(player_turn)
+    result = game.check_game_outcome_status()
 
-    player_turn = game.state.get_player_turn()
+    if result == 1:
+        print(f"{player_one.name} wins!")
+    elif result == 2:
+        print(f"{player_two.name} wins!")
+    elif result == 0:
+        print("The game is a draw!")
+
+    else:
+
+        game.state.change_turn(player_turn)
+
+        player_turn = game.state.get_player_turn()
 
 
 
