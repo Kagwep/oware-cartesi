@@ -14,7 +14,7 @@ class OwareModel:
         
         learning_rate = 0.001
         momentum = 0.8
-        optimizer = SGD(lr=learning_rate, momentum=momentum, nesterov=False)
+        optimizer = SGD(learning_rate=learning_rate, momentum=momentum, nesterov=False)
         
         self.model.compile(loss='mean_squared_error', optimizer=optimizer)
     

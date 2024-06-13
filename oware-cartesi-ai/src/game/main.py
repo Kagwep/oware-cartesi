@@ -4,6 +4,7 @@ from constants import PLAYER_ONE_HOUSES,PLAYER_TWO_HOUSES
 from oware_moves import OwareMoves
 from oware_model import OwareModel
 from coordinate_house_map import coordinates_houses_map
+from opponent_move_selector import OpponentMovesSelector
 
 player_one = Player('agent',PLAYER_ONE_HOUSES,0)
 player_two = Player('opponent',PLAYER_TWO_HOUSES,0)
@@ -18,6 +19,10 @@ oware_moves = OwareMoves()
 oware_model = OwareModel()
 
 train_model = False
+
+player_opponent = player_two
+
+opponent_move_selector = OpponentMovesSelector()
 
 while game.state.is_in_progress():
 
@@ -40,7 +45,8 @@ while game.state.is_in_progress():
         train_mode = True
         selected_house = coordinates_houses_map.get(selected_move)
     elif player_turn.name == 'opponent':
-        selected_house = capture_move_check(game,oware_moves.legal_moves_dict,player_turn)
+        move = opponent_move_selector.capture_move_check(game,oware_moves.legal_moves_dict,player_turn,player_opponent)
+        selected_house = coordinates_houses_map.get(move)
     else:
         selected_house =  game.get_selected_house(player_turn)
     
@@ -68,7 +74,7 @@ while game.state.is_in_progress():
 
     else:
 
-        game.state.change_turn(player_turn)
+        player_opponent = game.state.change_turn(player_turn)
 
         player_turn = game.state.get_player_turn()
 

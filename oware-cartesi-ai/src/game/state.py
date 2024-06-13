@@ -22,6 +22,7 @@ class State:
 
     def change_turn(self,player):
         self.player_turn =  self.player_one if player == self.player_two else self.player_two
+        return player
     
 
     def is_in_progress(self):

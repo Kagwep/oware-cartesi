@@ -141,14 +141,12 @@ class MoveSimulator:
         capture_made_check = self.check_capture(seeds_increamented_to_count,seeds,seeds_index)
 
 
-    
+        captured = 0
 
         if capture_made_check:
             seeds,captured = self.capture_seeds(seeds,seeds_increamented_to_count,seeds_index,captured)
         else:
             seeds = seeds
-
-
         
         return seeds
     

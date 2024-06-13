@@ -70,7 +70,7 @@ class OwareMoves(object):
 
     def legal_moves_generator(self,game,player):
         board = game.board.get_board()
-        current_board_state,player_turn = game.state.board_state, game.state.players_turn
+        current_board_state,player_turn = game.state.board_state, game.state.player_turn
         self.player_turn = player_turn
         seeds = game.board.get_seeds()
         player = game.state.get_player_turn()
@@ -95,32 +95,8 @@ class OwareMoves(object):
 
             tracker={}
             for legal_move_coord in self.legal_moves_dict:
-
-                input_data = np.array(self.legal_moves_dict[legal_move_coord]).reshape(1, 12).astype(np.float32)
-
-                model.allocate_tensors()
-
-                # Get input and output details
-                input_details = model.get_input_details()
-                output_details = model.get_output_details()
-
-                # Assuming legal_moves_dict is a dictionary containing legal move coordinates
-                # and reshaping the input data as needed
-                input_data = np.array(self.legal_moves_dict[legal_move_coord]).reshape(1, 12).astype(np.float32)
-
-                # Set input tensor
-                model.set_tensor(input_details[0]['index'], input_data)
-
-                # Run inference
-                model.invoke()
-
-                # Get output tensor
-                output_data = model.get_tensor(output_details[0]['index'])
-
-                score = output_data
-                
+                score=model.predict(self.legal_moves_dict[legal_move_coord].reshape(1,12))
                 tracker[legal_move_coord]=score
-
             selected_move=max(tracker, key=tracker.get)
             new_board_state=self.legal_moves_dict[selected_move]
             score=tracker[selected_move]

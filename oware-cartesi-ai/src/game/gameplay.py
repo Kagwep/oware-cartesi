@@ -121,7 +121,7 @@ class GamePlay():
             return False
         
 
-    def move(self,seeds,house_index):
+    def move(self,seeds,house_index,seeds_increamented_to_count):
         # Get the seed count at the house_index and set that count to zero
 
         
@@ -133,6 +133,8 @@ class GamePlay():
         
         # Start from the next house counter clockwise
         current_index = (house_index + 1) % len(seeds)
+
+        seeds_index = current_index
 
         while value > 0:
             # If we need to skip the original house and we're back at it, move to the next
@@ -158,7 +160,9 @@ class GamePlay():
         seeds = self.board.get_seeds()
         house_index = house.house_number - 1
 
-        seeds,seeds_increamented_to_count,seeds_index = self.move(seeds,house_index)
+        seeds_increamented_to_count = 0
+
+        seeds,seeds_increamented_to_count,seeds_index = self.move(seeds,house_index,seeds_increamented_to_count)
 
         capture_made_check = self.check_capture(seeds_increamented_to_count,seeds,seeds_index)
 
