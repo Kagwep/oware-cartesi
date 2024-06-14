@@ -67,8 +67,15 @@ class State:
             self.inprogress = True
 
         return self.result
-
-
     
-    
+    def set_winner(self):
+        if self.player_one.captured > self.player_two.captured:
+            self.result = 1  # Player one wins
+            self.inprogress = False
+        elif self.player_two.captured > self.player_one.captured:
+            self.result = 2  # Player two wins
+            self.inprogress = False
+        elif self.player_one.captured ==  self.player_two.captured:
+            self.result = 0  # Draw
+            self.inprogress = False
 

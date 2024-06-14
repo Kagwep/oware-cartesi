@@ -3,6 +3,7 @@ import copy
 from constants import NUMBER_OF_HOUSES, PLAYER_ONE_HOUSES , PLAYER_TWO_HOUSES,HOUSES
 from move_simulator import MoveSimulator
 
+
 class OwareMoves(object):
 
     def __init__(self):

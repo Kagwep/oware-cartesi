@@ -18,8 +18,8 @@ class OwareModel:
         
         self.model.compile(loss='mean_squared_error', optimizer=optimizer)
     
-    def train(self, x_train, y_train, epochs=10, batch_size=32):
-        return self.model.fit(x_train, y_train, epochs=epochs, batch_size=batch_size)
+    def train(self, x_train, y_train, epochs=10, batch_size=32, verbose=0):
+        return self.model.fit(x_train, y_train, epochs=epochs, batch_size=batch_size, verbose= verbose)
     
     def evaluate(self, x_test, y_test):
         return self.model.evaluate(x_test, y_test)
