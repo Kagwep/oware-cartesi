@@ -8,7 +8,8 @@ from opponent_move_selector import OpponentMovesSelector
 from scipy.ndimage import shift
 import numpy as np
 import tensorflow as tf
-
+import os
+import time
 
 
 def oware_cartesi(player_one,player_two):
@@ -61,6 +62,7 @@ def oware_cartesi(player_one,player_two):
             train_model = True
             selected_house = coordinates_houses_map.get(selected_move)
         elif player_turn.name == 'opponent':
+           
             move = opponent_move_selector.capture_move_check(game,oware_moves.legal_moves_dict,player_turn,player_opponent)
             selected_house = coordinates_houses_map.get(move)
         else:
@@ -135,10 +137,7 @@ def oware_cartesi(player_one,player_two):
                 assert len(a) == len(b)
                 p = np.random.permutation(len(a))
                 return a[p], b[p]
-
-        print("Before shuffling:")
-        print("X (new_board_states_list) length:", len(new_board_states_list))
-        print("Y (corrected_scores_list) length:", len(corrected_scores_list))
+        
         # shuffle x and y in unison
         x,y=unison_shuffled_copies(x,y)
         x=x.reshape(-1,12) 
@@ -155,6 +154,9 @@ def oware_cartesi(player_one,player_two):
 game_counter =  1
 output_model = None
 no_of_games = 2
+save_interval = 10
+start_time = time.time()
+
 while(game_counter <= no_of_games ):
      player_one = Player('agent',PLAYER_ONE_HOUSES,0)
      player_two = Player('opponent',PLAYER_TWO_HOUSES,0)
@@ -165,18 +167,49 @@ while(game_counter <= no_of_games ):
         print("Game#: ",game_counter)
         game_counter += 1
 
-        if game_counter == no_of_games:
+        if game_counter % save_interval == 0  or game_counter == no_of_games:
             output_model = model
 
 
+            model_name = f"agent-model-{str(no_of_games)}"
+
+            model_path = f"oware-cartesi-ai/src/game-models"
+
+            output_model.export(model_path)
+
+            converter = tf.lite.TFLiteConverter.from_saved_model(model_path)
+            tflite_model = converter.convert()
+
+            model_file_path = os.path.join(os.path.abspath(os.getcwd()), "oware-cartesi-ai/src/models-tflite", f"{model_name}.tflite")
+
+            with open(model_file_path, "wb") as f:
+                f.write(tflite_model)
 
 
-converter = tf.lite.TFLiteConverter.from_keras_model(output_model)
-tflite_model = converter.convert()
+
+end_time = time.time()  # Record the end time after the loop
+
+# Calculate the total duration of the process
+total_duration = end_time - start_time
 
 
-with open(f"agent-model-{str(no_of_games)}.tflite","wb") as f:
-     f.write(tflite_model)
+# Print a completion message with the total duration
+print("Training and model saving process completed successfully!")
+print(f"All models up to game {no_of_games} are saved at intervals of {save_interval} games.")
+print(f"Total duration: {total_duration:.2f} seconds")
+print("Check the 'oware-cartesi-ai/src/models' directory for all saved models.")
+
+# model_name = f"agent-model-{str(no_of_games)}"
+
+# output_model.export(model_name)
+
+# converter = tf.lite.TFLiteConverter.from_saved_model(model_name)
+# tflite_model = converter.convert()
+
+# model_file_path = os.path.join(os.path.abspath(os.getcwd()), "oware-cartesi-ai/src/models", f"{model_name}.tflite")
+
+# with open(model_file_path, "wb") as f:
+#     f.write(tflite_model)
 
 
 

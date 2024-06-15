@@ -46,6 +46,7 @@ class OpponentMovesSelector:
         return best_moves[0]
             
     def apply_secondary_criteria(self, best_moves, legal_moves_dict):
+
         self.temp_player, self.temp_opponent = self.temp_opponent, self.temp_player
 
         move_less = ''

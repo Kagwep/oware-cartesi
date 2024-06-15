@@ -23,6 +23,19 @@ class GamePlay():
 
         return state.get_board_state()
     
+    def player_seeds(self,player,seeds):
+
+        opponent_houses = PLAYER_ONE_HOUSES if player.houses == PLAYER_TWO_HOUSES else PLAYER_TWO_HOUSES
+
+        if 'House1' in opponent_houses:
+            opponent_seeds = seeds[:6]
+            player_seeds = seeds[6:]
+        else:
+            opponent_seeds = seeds[6:]
+            player_seeds = seeds[:6]
+
+        return opponent_seeds,player_seeds
+    
     def check_seeds_in_scope_capture(self, seeds_in_scope, remainder_houses):
 
         if len(seeds_in_scope) == 0:
@@ -58,18 +71,56 @@ class GamePlay():
 
         move_validity = self.check_seeds_in_scope_capture(seeds_in_scope, remainder_houses)
         return move_validity
+    
+
+    def opponent_has_seeds_after_move(self, selected_house_name, house, player_turn, board):
+        # Retrieve current seeds distribution on the board
+        seeds = self.board.get_seeds()
+
+        # Convert selected house name to its corresponding index
+        house_index = HOUSES.index(selected_house_name)
+
+        # Get initial distribution of seeds for opponent and player based on the current turn
+        opponent_seeds, player_seeds = self.player_seeds(player_turn, seeds)
+
+        # Calculate total seeds currently with the opponent
+        total_opponent_seeds = sum(opponent_seeds)
+
+        # Check if opponent already has seeds
+        if total_opponent_seeds > 0:
+            return True
+        
+        else:
+            # Simulate the move and get new seeds distribution
+            after_move_seeds_state, after_move_seeds_incremented_to_count, seeds_index = self.move(seeds, house_index)
+
+            # Re-calculate the seeds distribution after the move
+            opponent_seeds, player_seeds = self.player_seeds(player_turn, after_move_seeds_state)
+
+            # Check again for seeds with the opponent after the move
+            total_opponent_seeds = sum(opponent_seeds)
+            if total_opponent_seeds > 0:
+                return True
+            else:
+                print("Invalid move: Please select a house that will give the opponent at least one seed.")
+                return False
 
 
 
-    def is_selected_house_valid(self, selected_house):
+
+    def is_selected_house_valid(self, selected_house, player_turn):
+
         board = self.board.get_board()
+        
         house = board[selected_house]
 
         if house.seeds_number == 0:
+            print("House selected has no seeds please choose another house ...")
             return False
 
         else:
-            return True
+            opponent_seeds_check =  self.opponent_has_seeds_after_move(selected_house,house,player_turn,board)
+            return opponent_seeds_check
         
     def capture_seeds(self,seeds,seeds_increamented_to_count,seeds_index,captured):
 
@@ -121,10 +172,9 @@ class GamePlay():
             return False
         
 
-    def move(self,seeds,house_index,seeds_increamented_to_count):
+    def move(self,seeds,house_index):
         # Get the seed count at the house_index and set that count to zero
 
-        
         value = seeds[house_index]
         seeds[house_index] = 0
         
@@ -133,8 +183,6 @@ class GamePlay():
         
         # Start from the next house counter clockwise
         current_index = (house_index + 1) % len(seeds)
-
-        seeds_index = current_index
 
         while value > 0:
             # If we need to skip the original house and we're back at it, move to the next
@@ -160,9 +208,7 @@ class GamePlay():
         seeds = self.board.get_seeds()
         house_index = house.house_number - 1
 
-        seeds_increamented_to_count = 0
-
-        seeds,seeds_increamented_to_count,seeds_index = self.move(seeds,house_index,seeds_increamented_to_count)
+        seeds,seeds_increamented_to_count,seeds_index = self.move(seeds,house_index)
 
         capture_made_check = self.check_capture(seeds_increamented_to_count,seeds,seeds_index)
 
@@ -199,11 +245,9 @@ class GamePlay():
 
             selected_house = self.get_selected_house(player_turn)
 
-        house_selected_has_seeds = self.is_selected_house_valid(selected_house)
+        house_valid = self.is_selected_house_valid(selected_house, player_turn)
         
-        if not house_selected_has_seeds:
-
-            print("House selected has no seeds please choose another house ...")
+        if not house_valid:
 
             selected_house = self.get_selected_house(player_turn)
 

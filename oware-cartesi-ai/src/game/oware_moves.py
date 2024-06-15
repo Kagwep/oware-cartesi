@@ -48,21 +48,23 @@ class OwareMoves(object):
         player_row = 1 if 'House1' in player.houses else 0
  
         # Extract the selected row from the board_state
-        player_seeds = player_seeds
-        opponent_seeds = opponent_seeds
 
-        selected_board_row = player_seeds if player_row == 1 else opponent_seeds
+        selected_board_row = player_seeds 
 
         # Initialize moves dictionary to store coordinates and updated board states
         moves = {}
 
-
         for col in range(len(selected_board_row)):
-            picked_seeds = selected_board_row[col]
-            if picked_seeds > 0:
-                selected_house = f'House{col+1}'
+            selected_house = f'House{col+1}' if player_row == 1 else f'House{col+7}'
+
+            is_house_valid = self.move_simulator.is_selected_house_valid(selected_house, player,board,seeds_state)
+
+            seeds_state = copy.deepcopy(seeds)
+            if is_house_valid:
                 result_seeds_state = self.move_simulator.make_move(selected_house,board,seeds_state,player)
                 moves[(player_row, col)] = np.array(result_seeds_state)
+                seeds_state = copy.deepcopy(seeds)
+            else:
                 seeds_state = copy.deepcopy(seeds)
 
 

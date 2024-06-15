@@ -6,6 +6,21 @@ class MoveSimulator:
     def __init__(self) -> None:
         self.player = None
 
+
+    def player_seeds(self,player,seeds):
+
+        opponent_houses = PLAYER_ONE_HOUSES if player.houses == PLAYER_TWO_HOUSES else PLAYER_TWO_HOUSES
+
+        if 'House1' in opponent_houses:
+            opponent_seeds = seeds[:6]
+            player_seeds = seeds[6:]
+        else:
+            opponent_seeds = seeds[6:]
+            player_seeds = seeds[:6]
+
+        return opponent_seeds,player_seeds
+    
+
     def check_seeds_in_scope_capture(self, seeds_in_scope, remainder_houses):
 
             if len(seeds_in_scope) == 0:
@@ -44,15 +59,55 @@ class MoveSimulator:
 
 
 
-    def is_selected_house_valid(board,selected_house):
+    def opponent_has_seeds_after_move(self, selected_house_name, house, player_turn, board,seeds):
+        # Retrieve current seeds distribution on the board
+
+        # Convert selected house name to its corresponding index
+        house_index = HOUSES.index(selected_house_name)
+
+        # Get initial distribution of seeds for opponent and player based on the current turn
+        opponent_seeds, player_seeds = self.player_seeds(player_turn, seeds)
+
+        # Calculate total seeds currently with the opponent
+        total_opponent_seeds = sum(opponent_seeds)
+
+        # Check if opponent already has seeds
+        if total_opponent_seeds > 0:
+            return True
+        
+        else:
+            # Simulate the move and get new seeds distribution
+            after_move_seeds_state, after_move_seeds_incremented_to_count, seeds_index = self.move(seeds, house_index)
+
+            # Re-calculate the seeds distribution after the move
+            opponent_seeds, player_seeds = self.player_seeds(player_turn, after_move_seeds_state)
+
+            # Check again for seeds with the opponent after the move
+            total_opponent_seeds = sum(opponent_seeds)
+            if total_opponent_seeds > 0:
+                return True
+            else:
+                return False
+
+
+
+
+    def is_selected_house_valid(self, selected_house, player_turn,board,seeds):
+
 
         house = board[selected_house]
 
-        if house.seeds_number == 0:
+        house_index = HOUSES.index(selected_house)
+
+        seeds_number = seeds[house_index]
+
+        if seeds_number == 0:
             return False
 
         else:
-            return True
+            opponent_seeds_check =  self.opponent_has_seeds_after_move(selected_house,house,player_turn,board,seeds)
+            return opponent_seeds_check
+        
         
     def capture_seeds(self,seeds,seeds_increamented_to_count,seeds_index,captured):
 
@@ -86,7 +141,6 @@ class MoveSimulator:
 
         player_house = True if f'House{seeds_index + 1}' in self.player.houses else False
 
-
         if (last_seed_count == 2 or last_seed_count == 3) and not player_house:
 
             capture_move_valid = self.is_move_valid(seeds,seeds_index)
@@ -103,7 +157,8 @@ class MoveSimulator:
     def move(self,seeds,house_index):
         # Get the seed count at the house_index and set that count to zero
 
-        
+      
+
         value = seeds[house_index]
         seeds[house_index] = 0
         
@@ -112,6 +167,7 @@ class MoveSimulator:
         
         # Start from the next house counter clockwise
         current_index = (house_index + 1) % len(seeds)
+
 
         while value > 0:
             # If we need to skip the original house and we're back at it, move to the next
