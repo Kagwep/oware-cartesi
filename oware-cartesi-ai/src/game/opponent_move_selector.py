@@ -85,6 +85,11 @@ class OpponentMovesSelector:
 
     def capture_move_check(self,game,legal_moves_dict,player_turn,player_opponent):
 
+        # Check if the dictionary has exactly one item
+        if len(legal_moves_dict) == 1:
+            # Retrieve the single key from the dictionary
+            return next(iter(legal_moves_dict))
+
         self.temp_board = game.board.get_board()
 
         self.temp_player = player_turn

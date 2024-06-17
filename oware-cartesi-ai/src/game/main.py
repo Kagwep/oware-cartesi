@@ -32,6 +32,9 @@ def oware_cartesi(player_one,player_two):
     scores_list=[]
     corrected_scores_list=[]
     new_board_states_list=[]
+
+    player_one_previous_captured = 0
+    player_two_previous_captured = 0
     
     stale_mate = False
 
@@ -96,11 +99,16 @@ def oware_cartesi(player_one,player_two):
 
             player_turn = game.state.get_player_turn()
 
+            player_one_current_captured = player_one.captured
+            player_two_current_captured = player_two.captured
+
             # Check for stalemate condition based on captures
-            if player_turn.captured == player_opponent.captured:
+            if (player_one_previous_captured == player_one_current_captured) and ( player_two_current_captured == player_two_previous_captured):
                 players_captures_track_count += 1
             else:
                 players_captures_track_count = 0
+                player_one_previous_captured = player_one_current_captured
+                player_two_previous_captured = player_two_current_captured
 
             # Check if stalemate count reached
             if players_captures_track_count >= stale_mate_count:
@@ -109,9 +117,22 @@ def oware_cartesi(player_one,player_two):
             # Handle stalemate
             if stale_mate:
                 print("Stalemate detected. Ending game.")
-                game.state.set_winner()  # This function needs to properly handle stalemate logic
+                result = game.state.set_winner()  # This function needs to properly handle stalemate logic
 
-            
+            oppononent_seeds,player_seeds = game.player_seeds(player_turn,seeds)
+
+            opponent_seeds_total = sum(oppononent_seeds)
+
+            opponent_has_zero_seeds = opponent_seeds_total == 0
+
+            if opponent_has_zero_seeds:
+
+                seeds_distribution_possible = game.can_player_distribute_seeds_to_opponent(player_turn,seeds)
+
+                if not seeds_distribution_possible:
+                    print("Automatic capture. Ending game.")
+                    
+                    result = game.state.update_capture_and_win(player_turn,player_seeds)  
 
 
     if train_model:
@@ -191,12 +212,13 @@ end_time = time.time()  # Record the end time after the loop
 
 # Calculate the total duration of the process
 total_duration = end_time - start_time
+total_duration_minutes = total_duration / 60
 
 
 # Print a completion message with the total duration
 print("Training and model saving process completed successfully!")
 print(f"All models up to game {no_of_games} are saved at intervals of {save_interval} games.")
-print(f"Total duration: {total_duration:.2f} seconds")
+print(f"Total duration: {total_duration_minutes:.2f} minutes")
 print("Check the 'oware-cartesi-ai/src/models' directory for all saved models.")
 
 # model_name = f"agent-model-{str(no_of_games)}"

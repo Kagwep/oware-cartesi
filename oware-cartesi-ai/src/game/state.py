@@ -69,6 +69,7 @@ class State:
         return self.result
     
     def set_winner(self):
+        
         if self.player_one.captured > self.player_two.captured:
             self.result = 1  # Player one wins
             self.inprogress = False
@@ -79,3 +80,14 @@ class State:
             self.result = 0  # Draw
             self.inprogress = False
 
+        return self.result
+
+    def update_capture_and_win(self,player,seeds):
+        new_captured = sum(seeds)
+        if player == self.player_two:
+
+            self.player_two.captured += new_captured
+        else:
+            self.player_one.captured += new_captured
+
+        return self.set_winner()

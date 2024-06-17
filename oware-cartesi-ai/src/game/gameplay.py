@@ -38,39 +38,84 @@ class GamePlay():
     
     def check_seeds_in_scope_capture(self, seeds_in_scope, remainder_houses):
 
-        if len(seeds_in_scope) == 0:
-            return True
-        
-        maximum_seed_count = max(seeds_in_scope) 
-        minimum_seed_count = min(seeds_in_scope)
-        max_in_remainders = max(remainder_houses) if len(remainder_houses) > 0 else 0
+            scope_has_no_seeds = len(seeds_in_scope) == 0
 
-        seed_count = sum(1 for seed_number in seeds_in_scope if seed_number > 0)
-        if seed_count == 1:
-            return True
+            # Check if all seeds are less than or equal to 3
+            all_three_or_less = all(seed_number <= 3 for seed_number in seeds_in_scope)
+            
+            # Check if all seeds in remainder_houses are zero
+            all_zeros = all(house == 0 for house in remainder_houses)
 
-        can_capture_all = 1 < maximum_seed_count <= 3 and 1 < minimum_seed_count <= 3
+            if scope_has_no_seeds and all_zeros:
+                return False
 
-        if max_in_remainders == 0 and can_capture_all:
-            return False
-        else:
-            return True
+            if all_three_or_less and all_zeros:
+                return False
+            
+            any_remainder = any(house > 0 for house in remainder_houses)
+
+            if all_three_or_less and any_remainder:
+                return True
+            
+            maximum_seed_count = max(seeds_in_scope) 
+            minimum_seed_count = min(seeds_in_scope)
+            max_in_remainders = max(remainder_houses) if len(remainder_houses) > 0 else 0
+
+            seed_count = sum(1 for seed_number in seeds_in_scope if seed_number > 0)
+            if seed_count == 1:
+                return True
+
+            can_capture_all = 1 < maximum_seed_count <= 3 and 1 < minimum_seed_count <= 3
+
+            if max_in_remainders == 0 and can_capture_all:
+                return False
+            else:
+                return True
 
     def is_move_valid(self, seeds, seeds_index):
-        player = self.state.get_player_turn()
-        opponent_houses = PLAYER_ONE_HOUSES if player.houses == PLAYER_TWO_HOUSES else PLAYER_TWO_HOUSES
+        
+        opponent_houses = PLAYER_ONE_HOUSES if self.player.houses == PLAYER_TWO_HOUSES else PLAYER_TWO_HOUSES
 
         if 'House1' in opponent_houses:
             opponent_seeds = seeds[:6]
-            remainder_houses = opponent_seeds[seeds_index:]
-            seeds_in_scope  = opponent_seeds[:seeds_index]
+            # Check if seeds_index is at the last position
+            if seeds_index == 5:
+                remainder_houses = []  # Set remainder_houses to empty if it's the last index
+            else:
+                remainder_houses = opponent_seeds[seeds_index + 1:]  # Start from the next index to exclude the seed at seeds_index
+
+            seeds_in_scope = opponent_seeds[:seeds_index + 1]  # Include the last item
+            opponent_first_index = 0
+            opponent_last_index = 5 
         else:
             opponent_seeds = seeds[6:]
-            remainder_houses = opponent_seeds[seeds_index-6:]
-            seeds_in_scope = opponent_seeds[:seeds_index-6]
+            # Check if seeds_index is at the last position
+            if seeds_index == 11:
+                remainder_houses = []  # Set remainder_houses to empty if it's the last index
+            else:
+                remainder_houses = opponent_seeds[(seeds_index - 6) + 1:]  # Start from the next index to exclude the seed at seeds_index
 
+            seeds_in_scope = opponent_seeds[:seeds_index - 5]  # Include the last item, adjust to correct index calculation
+            opponent_first_index = 6
+            opponent_last_index = 11
+
+
+        # Special handling for the first house
+        if seeds_index == opponent_first_index:
+            # Check if the first house has 3 or fewer seeds and all other houses are 0
+            if opponent_seeds[0] <= 3 and all(seed == 0 for seed in opponent_seeds[1:]):
+                return False
+                
+
+        # Check if the last seed lands in the last opponent house
+        if seeds_index == opponent_last_index:
+            # Check for validity based on opponent's seed condition
+            if all(seed > 0 for seed in opponent_seeds) and max(opponent_seeds) <= 3:
+                return False
+       
         move_validity = self.check_seeds_in_scope_capture(seeds_in_scope, remainder_houses)
         return move_validity
+
     
 
     def opponent_has_seeds_after_move(self, selected_house_name, house, player_turn, board):
@@ -111,7 +156,7 @@ class GamePlay():
     def is_selected_house_valid(self, selected_house, player_turn):
 
         board = self.board.get_board()
-        
+
         house = board[selected_house]
 
         if house.seeds_number == 0:
