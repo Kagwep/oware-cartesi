@@ -1,10 +1,10 @@
 import numpy as np
 import copy
-from .constants import NUMBER_OF_HOUSES, PLAYER_ONE_HOUSES , PLAYER_TWO_HOUSES,HOUSES
-from .move_simulator import MoveSimulator
+from game.constants import NUMBER_OF_HOUSES, PLAYER_ONE_HOUSES , PLAYER_TWO_HOUSES,HOUSES
+from game.move_simulator import MoveSimulator
 
 
-class OwareMoves(object):
+class GameplayEvaluationMoves(object):
 
     def __init__(self):
         self.board_numpy_status = []
@@ -60,7 +60,7 @@ class OwareMoves(object):
             is_house_valid = self.move_simulator.is_selected_house_valid(selected_house, player,board,seeds_state)
 
             seeds_state = copy.deepcopy(seeds)
-            if is_house_valid:
+            if (selected_house in player.houses) and is_house_valid:
                 result_seeds_state = self.move_simulator.make_move(selected_house,board,seeds_state,player)
                 moves[(player_row, col)] = np.array(result_seeds_state)
                 seeds_state = copy.deepcopy(seeds)
@@ -92,22 +92,25 @@ class OwareMoves(object):
         self.legal_moves_dict = moves
 
 
-    def move_selector(self,model):
-
+    def move_selector(self, model):
         if self.legal_moves_dict:
-
-            tracker={}
+            tracker = {}
             for legal_move_coord in self.legal_moves_dict:
-                score=model.predict(self.legal_moves_dict[legal_move_coord].reshape(1,12))
-                tracker[legal_move_coord]=score
-            selected_move=max(tracker, key=tracker.get)
-            new_board_state=self.legal_moves_dict[selected_move]
-            score=tracker[selected_move]
+                # Ensure prediction is reshaped and extract scalar value
+                prediction = model.predict(self.legal_moves_dict[legal_move_coord].reshape(1, -1))
+                # Extract scalar value from prediction
+                score = prediction[0][0] if isinstance(prediction, np.ndarray) else prediction.items()
+                tracker[legal_move_coord] = score
+            
+            # Find the move with the maximum score
+            selected_move = max(tracker, key=tracker.get)
+            new_board_state = self.legal_moves_dict[selected_move]
+            score = tracker[selected_move]
 
-            return selected_move,new_board_state,score
-        
+            return selected_move, new_board_state, score
         else:
             return (np.sum(self.board_numpy_status),)
+
     
     
 

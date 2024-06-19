@@ -1,6 +1,6 @@
-from board import Board
-from state import State
-from constants import NUMBER_OF_HOUSES, PLAYER_ONE_HOUSES , PLAYER_TWO_HOUSES,HOUSES
+from .board import Board
+from .state import State
+from .constants import NUMBER_OF_HOUSES, PLAYER_ONE_HOUSES , PLAYER_TWO_HOUSES,HOUSES
 
 
 class GamePlay():
@@ -73,8 +73,10 @@ class GamePlay():
                 return True
 
     def is_move_valid(self, seeds, seeds_index):
+
+        player = self.state.get_player_turn()
         
-        opponent_houses = PLAYER_ONE_HOUSES if self.player.houses == PLAYER_TWO_HOUSES else PLAYER_TWO_HOUSES
+        opponent_houses = PLAYER_ONE_HOUSES if player.houses == PLAYER_TWO_HOUSES else PLAYER_TWO_HOUSES
 
         if 'House1' in opponent_houses:
             opponent_seeds = seeds[:6]
@@ -116,6 +118,7 @@ class GamePlay():
         move_validity = self.check_seeds_in_scope_capture(seeds_in_scope, remainder_houses)
         return move_validity
 
+
     
 
     def opponent_has_seeds_after_move(self, selected_house_name, house, player_turn, board):
@@ -156,7 +159,7 @@ class GamePlay():
     def is_selected_house_valid(self, selected_house, player_turn):
 
         board = self.board.get_board()
-
+        
         house = board[selected_house]
 
         if house.seeds_number == 0:
@@ -192,7 +195,36 @@ class GamePlay():
         else:
             return seeds,captured
             
+    def can_player_distribute_seeds_to_opponent(self,player,seeds):
 
+        #seeds = self.board.get_seeds()
+        
+        oppononent_seeds,player_seeds = self.player_seeds(player,seeds)
+
+        is_closest_row = 'House1' in player.houses
+
+        print(player_seeds)
+        print(player.houses)
+        print(player.name)
+
+        if is_closest_row:
+            house_count = 1
+
+            for seed in player_seeds:
+                if seed + house_count >= 7:
+                    return True
+                else:
+                    house_count += 1
+        
+        else:
+            house_count = 7
+
+            for seed in player_seeds:
+                if seed + house_count >= 13:
+                    return True
+                else:
+                    house_count += 1
+        return False
 
         
     def check_capture(self,last_seed_count,seeds,seeds_index):

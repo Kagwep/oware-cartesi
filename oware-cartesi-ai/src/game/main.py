@@ -171,6 +171,8 @@ def oware_cartesi(player_one,player_two):
 
         return model,y,play_result
 
+
+
  
 game_counter =  1
 output_model = None
