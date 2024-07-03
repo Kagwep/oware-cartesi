@@ -1,25 +1,12 @@
 from os import environ
 import logging
 import requests
-from game.player import Player
-from game.gameplay import GamePlay
-from game.constants import PLAYER_ONE_HOUSES,PLAYER_TWO_HOUSES
 
 logging.basicConfig(level="INFO")
 logger = logging.getLogger(__name__)
 
 rollup_server = environ["ROLLUP_HTTP_SERVER_URL"]
 logger.info(f"HTTP rollup_server url is {rollup_server}")
-
-
-player_one = Player('agent',PLAYER_ONE_HOUSES,0)
-player_two = Player('opponent',PLAYER_TWO_HOUSES,0)
-
-player_turn = player_one
-
-game = GamePlay()
-
-initial_board_state = game.game_init(player_one,player_two,player_turn)
 
 
 def handle_advance(data):

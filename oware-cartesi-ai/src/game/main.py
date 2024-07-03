@@ -10,6 +10,7 @@ import numpy as np
 import tensorflow as tf
 import os
 import time
+import csv
 
 
 def oware_cartesi(player_one,player_two):
@@ -41,6 +42,8 @@ def oware_cartesi(player_one,player_two):
     players_captures_track_count = 0
 
     stale_mate_count = 100
+
+    
 
     while game.state.is_in_progress():
 
