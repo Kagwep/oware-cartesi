@@ -1,57 +1,26 @@
-# Cartesi frontend web
+# Oware DApp Front-End with React, TypeScript, and Vite
 
-```
-Cartesi Rollups version: 1.0.x
-```
+This serves as a starting point for building the front-end interface of the Oware DApp using React, TypeScript, and Vite. 
 
-## Features
+## Key Technologies:
 
-With this project you can test some interactions with the Cartesi Rollups project:
+- **React:** A popular JavaScript library for building user interfaces.
+- **TypeScript:** A superset of JavaScript that adds static typing for improved code maintainability and developer experience.
+- **Vite:** A lightning-fast build tool for modern web development, known for its fast development server and excellent build performance.
 
-1. Metamask integration
-2. Send Inspect state Requests and Listing Reports response
-3. Sending Dapp Address with the DApp Relay
-4. Sending inputs
-5. Depositing Ether
-6. Depositing ERC20
-7. Depositing ERC721
-8. Depositing ERC1155 Single
-9. Depositing ERC1155 Batch
-10. Listing Notices
-11. Listing Reports
-12. Listing Vouchers
-13. Executing Vouchers
+## Structure and Configuration:
 
-## Configurtion
+- The front-end code  resides in a directory named `client`.
+- You'll need to install the necessary dependencies using npm or yarn:
 
-Edit src/config.json to set the testnet parameters and deployment, inspect, graphql, rpc addresses.
-
-## Available Scripts
-
-In the project directory, run:
-
-```shell
-yarn
-yarn codegen
+```bash
+npm install
 ```
 
-to build the app.
+To start the development server with  run:
 
-```shell
-yarn start
+```bash
+
+`npm run dev
+
 ```
-
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
-
-## Voucher Notes
-
-To execute Vouchers, the voucher epoch must be finalized so the rollups framework generate the proofs.
-As a reminder, you can advance time in hardhat with the command:
-
-```shell
-curl --data '{"id":1337,"jsonrpc":"2.0","method":"evm_increaseTime","params":[864010]}' http://localhost:8545
-```
-
-[![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/lynoferraz/frontend-web-cartesi)
-
