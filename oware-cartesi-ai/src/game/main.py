@@ -20,6 +20,7 @@ def oware_cartesi(player_one,player_two):
     game = GamePlay()
 
     initial_board_state = game.game_init(player_one,player_two,player_turn)
+
     oware_moves = OwareMoves()
 
     oware_model = OwareModel()
@@ -43,8 +44,6 @@ def oware_cartesi(player_one,player_two):
 
     stale_mate_count = 100
 
-    
-
     while game.state.is_in_progress():
 
         visua1, visual2 = game.get_board_display(player_turn)
@@ -56,7 +55,12 @@ def oware_cartesi(player_one,player_two):
         print(row_two)
         print("      ")
     
-        oware_moves.legal_moves_generator(game,player_turn)
+        moves, moves_state = game.get_valid_moves(game,player_turn)
+
+        print(moves)
+        print(moves_state)
+
+
         move_selected = oware_moves.move_selector(oware_model.get_model())
 
         if len(move_selected) == 3:
@@ -184,18 +188,20 @@ save_interval = 10
 start_time = time.time()
 
 while(game_counter <= no_of_games ):
-     player_one = Player('agent',PLAYER_ONE_HOUSES,0)
-     player_two = Player('opponent',PLAYER_TWO_HOUSES,0)
+     
+     player_one = Player('agent1',PLAYER_ONE_HOUSES,0)
+     player_two = Player('opponent1',PLAYER_TWO_HOUSES,0)
      oware_results = oware_cartesi(player_one,player_two)
 
      if oware_results is not None:
+        
         model,y,results = oware_results
         print("Game#: ",game_counter)
         game_counter += 1
 
         if game_counter % save_interval == 0  or game_counter == no_of_games:
-            output_model = model
 
+            output_model = model
 
             model_name = f"agent-model-{str(no_of_games)}"
 

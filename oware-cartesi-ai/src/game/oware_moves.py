@@ -1,7 +1,7 @@
 import numpy as np
 import copy
-from .constants import NUMBER_OF_HOUSES, PLAYER_ONE_HOUSES , PLAYER_TWO_HOUSES,HOUSES
-from .move_simulator import MoveSimulator
+from constants import NUMBER_OF_HOUSES, PLAYER_ONE_HOUSES , PLAYER_TWO_HOUSES,HOUSES
+from move_simulator import MoveSimulator
 
 
 class OwareMoves(object):
@@ -54,6 +54,9 @@ class OwareMoves(object):
         # Initialize moves dictionary to store coordinates and updated board states
         moves = {}
 
+        player_moves_state = np.zeros(len(player_seeds), dtype=np.uint8)
+        opponent_moves_state = np.zeros(len(player_seeds), dtype=np.uint8)
+
         for col in range(len(selected_board_row)):
             selected_house = f'House{col+1}' if player_row == 1 else f'House{col+7}'
 
@@ -63,13 +66,18 @@ class OwareMoves(object):
             if is_house_valid:
                 result_seeds_state = self.move_simulator.make_move(selected_house,board,seeds_state,player)
                 moves[(player_row, col)] = np.array(result_seeds_state)
+                player_moves_state[col] = 1  # Mark this move as valid
                 seeds_state = copy.deepcopy(seeds)
             else:
                 seeds_state = copy.deepcopy(seeds)
 
-
+        # Combine player and opponent moves states based on player_row
+        if player_row == 0:
+            moves_state = np.concatenate((opponent_moves_state, player_moves_state))
+        else:
+            moves_state = np.concatenate((player_moves_state, opponent_moves_state))
     
-        return moves
+        return moves, moves_state
 
     def legal_moves_generator(self,game,player):
         board = game.board.get_board()
@@ -87,9 +95,11 @@ class OwareMoves(object):
             player_seeds = seeds[:6]
             
 
-        moves = self.possible_moves(seeds,opponent_seeds, player_seeds,player,board)
+        moves, moves_state = self.possible_moves(seeds,opponent_seeds, player_seeds,player,board)
 
         self.legal_moves_dict = moves
+
+        return moves, moves_state
 
 
     def move_selector(self,model):

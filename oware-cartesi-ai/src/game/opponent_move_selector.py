@@ -1,8 +1,8 @@
-from .coordinate_house_map import coordinates_houses_map
+from coordinate_house_map import coordinates_houses_map
 import numpy as np
 import random
-from .constants import NUMBER_OF_HOUSES, PLAYER_ONE_HOUSES , PLAYER_TWO_HOUSES,HOUSES
-from .oware_moves import OwareMoves
+from constants import NUMBER_OF_HOUSES, PLAYER_ONE_HOUSES , PLAYER_TWO_HOUSES,HOUSES
+from oware_moves import OwareMoves
 
 class OpponentMovesSelector:
 

@@ -1,5 +1,5 @@
 
-from .constants import NUMBER_OF_HOUSES, PLAYER_ONE_HOUSES , PLAYER_TWO_HOUSES,HOUSES
+from constants import NUMBER_OF_HOUSES, PLAYER_ONE_HOUSES , PLAYER_TWO_HOUSES,HOUSES
 
 class MoveSimulator:
 
@@ -206,3 +206,21 @@ class MoveSimulator:
         
         return seeds
     
+
+    def get_next_state(self,seeds,house_index,player):
+
+        self.player = player
+                
+        seeds,seeds_increamented_to_count,seeds_index = self.move(seeds,house_index)
+
+        capture_made_check = self.check_capture(seeds_increamented_to_count,seeds,seeds_index)
+
+
+        captured = 0
+
+        if capture_made_check:
+            seeds,captured = self.capture_seeds(seeds,seeds_increamented_to_count,seeds_index,captured)
+        else:
+            seeds = seeds
+        
+        return seeds , captured

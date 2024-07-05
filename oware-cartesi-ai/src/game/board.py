@@ -1,5 +1,5 @@
-from .house import House
-from .constants import NUMBER_OF_HOUSES
+from house import House
+from constants import NUMBER_OF_HOUSES
 
 class Board:
     

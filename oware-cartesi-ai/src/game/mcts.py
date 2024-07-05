@@ -3,25 +3,27 @@ import math
 import copy
 
 class Node:
-    def __init__(self, game,args,state, parent=None, action_taken=None) -> None:
+
+    def __init__(self, game,args,state,player, parent=None, action_taken=None) -> None:
+
         self.game = game 
         self.state  = state
         self.args = args
         self.parent = parent
         self.action_taken = action_taken
         self.children = []
-
-        self.expandable_moves = game.get_valid_moves(state)
-
+        self.moves, self.expandable_moves = game.get_valid_moves(game,player)
         self.visit_count = 0
         self.value_sum = 0 
+        self.player = player
 
+        
 
-  
     def is_fully_exanded(self):
         return np.sum(self.expandable_moves) == 0 and len(self.children) > 0
     
     def select(self):
+
         best_child = None
         best_ucb = -np.inf
 
@@ -37,29 +39,27 @@ class Node:
     def get_ucb(self, child):
 
         q_value  = 1 - ((child.value_sum / child.visit_count) + 1) / 2
-
         return q_value + self.args['C'] * math.sqrt(math.log(self.visit_count) / child.visit_count)
     
     def expand(self):
+
         action = np.random.choice(np.where(self.expandable_moves == 1)[0])
+
         self.expandable_moves[action] = 0
         child_state = self.state.copy()
-        child_state = self.game.get_next_state(child_state,action,1)
-        child_state = self.game.change_perspective(child_state,player = -1)
-
-
-        child = Node(self.game, self.args, child_state, self,action)
+        seeds,captured = self.game.get_next_state(self,child_state,action,self.player)
+        self.player.captured += captured
+        child_state = np.array(seeds)
+        child_state = self.game.change_perspective(child_state)
+        child = Node(self.game, self.args, child_state, self, action)
         self.children.append(child)
 
         return child
     
     def simulate(self):
 
-        
-        
-        value, is_terminal = self.game.get_value_and_terminated(self.state, self.action_taken)
+        value, is_terminal = self.game.get_value_and_terminated(self.state, self.action_taken,self.player)
 
-      
         value = self.game.get_opponent_value(value)
 
         if is_terminal:
@@ -68,9 +68,10 @@ class Node:
         rollout_state = self.state.copy()
         rollout_player = 1
 
-        while True:
+        captured_one  = 0
+        captured_two  = 0
 
-            
+        while True:
 
             valid_moves = self.game.get_valid_moves(rollout_state)
 
@@ -90,6 +91,7 @@ class Node:
 
         
     def backpropergate(self,value):
+
         self.value_sum += value
         self.visit_count  += 1 
 
@@ -108,7 +110,7 @@ class MCTS:
         self.game = game
         self.args = args
 
-    def search(self,state):
+    def search(self,state,player):
         # define a root node
         root = Node(self.game, self.args, state)
 
@@ -124,13 +126,10 @@ class MCTS:
             value  = self.game.get_opponent_value(value)
 
             if not is_terminal:
-                node  = node.expand()
-                value = node.simulate()
+                node  = node.expand(player)
+                value = node.simulate(player)
 
             node.backpropergate(value)
-
-
-
 
             action_propbs = np.zeros(self.game.action_size)
 

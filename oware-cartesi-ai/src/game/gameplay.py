@@ -1,7 +1,9 @@
-from .board import Board
-from .state import State
-from .constants import NUMBER_OF_HOUSES, PLAYER_ONE_HOUSES , PLAYER_TWO_HOUSES,HOUSES
-
+from board import Board
+from state import State
+from constants import NUMBER_OF_HOUSES, PLAYER_ONE_HOUSES , PLAYER_TWO_HOUSES,HOUSES
+from oware_moves import OwareMoves
+from move_simulator import MoveSimulator
+import numpy as np
 
 class GamePlay():
 
@@ -9,6 +11,9 @@ class GamePlay():
         self.state = None
         self.board = None
         self.skip_house = ''
+        self.oware_moves = OwareMoves()
+        self.move_simulator = MoveSimulator()
+
        
         
     
@@ -343,3 +348,18 @@ class GamePlay():
     def check_game_outcome_status(self):
         result = self.state.check_win()
         return result
+    
+
+    def get_valid_moves(self,game,player_turn):
+         moves, moves_state = self.oware_moves.legal_moves_generator(game,player_turn)
+         return moves, moves_state
+    
+
+    def get_next_state(self,seeds,action,player):
+        seeds,captured = self.move_simulator.get_next_state(seeds,action,player)
+        return seeds,captured
+    
+
+    def change_perspective(self,board_state):
+        return  np.concatenate((board_state[-6:], board_state[6:-6], board_state[:6]))
+

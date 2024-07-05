@@ -1,4 +1,4 @@
-from .constants import NUMBER_OF_HOUSES
+from constants import NUMBER_OF_HOUSES
 
 class State:
 
