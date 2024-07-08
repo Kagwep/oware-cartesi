@@ -59,7 +59,7 @@ class MoveSimulator:
 
 
 
-    def opponent_has_seeds_after_move(self, selected_house_name, house, player_turn, board,seeds):
+    def opponent_has_seeds_after_move(self, selected_house_name,player_turn, seeds):
         # Retrieve current seeds distribution on the board
 
         # Convert selected house name to its corresponding index
@@ -92,10 +92,8 @@ class MoveSimulator:
 
 
 
-    def is_selected_house_valid(self, selected_house, player_turn,board,seeds):
+    def is_selected_house_valid(self, selected_house, player_turn,seeds):
 
-
-        house = board[selected_house]
 
         house_index = HOUSES.index(selected_house)
 
@@ -105,7 +103,7 @@ class MoveSimulator:
             return False
 
         else:
-            opponent_seeds_check =  self.opponent_has_seeds_after_move(selected_house,house,player_turn,board,seeds)
+            opponent_seeds_check =  self.opponent_has_seeds_after_move(selected_house,player_turn,seeds)
             return opponent_seeds_check
         
         
@@ -186,11 +184,11 @@ class MoveSimulator:
         return seeds,seeds_increamented_to_count,seeds_index
 
 
-    def make_move(self,selected_house,board,seeds,player):
+    def make_move(self,selected_house,seeds,player):
 
         self.player = player
-        house = board[selected_house]
-        house_index = house.house_number - 1
+
+        house_index = HOUSES.index(selected_house)
 
         seeds,seeds_increamented_to_count,seeds_index = self.move(seeds,house_index)
 
@@ -209,6 +207,10 @@ class MoveSimulator:
 
     def get_next_state(self,seeds,house_index,player):
 
+  
+        seeds = seeds.tolist()
+
+
         self.player = player
                 
         seeds,seeds_increamented_to_count,seeds_index = self.move(seeds,house_index)
@@ -222,5 +224,4 @@ class MoveSimulator:
             seeds,captured = self.capture_seeds(seeds,seeds_increamented_to_count,seeds_index,captured)
         else:
             seeds = seeds
-        
         return seeds , captured

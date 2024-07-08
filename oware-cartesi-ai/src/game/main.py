@@ -11,7 +11,7 @@ import tensorflow as tf
 import os
 import time
 import csv
-
+from mcts import MCTS,Node
 
 def oware_cartesi(player_one,player_two):
 
@@ -44,6 +44,13 @@ def oware_cartesi(player_one,player_two):
 
     stale_mate_count = 100
 
+    args = {
+    'C': 1.41,
+    'num_searches':1000
+    }
+
+    mcts = MCTS(game,args)
+
     while game.state.is_in_progress():
 
         visua1, visual2 = game.get_board_display(player_turn)
@@ -54,31 +61,43 @@ def oware_cartesi(player_one,player_two):
         print(row_one)
         print(row_two)
         print("      ")
-    
-        moves, moves_state = game.get_valid_moves(game,player_turn)
-
-        print(moves)
-        print(moves_state)
 
 
-        move_selected = oware_moves.move_selector(oware_model.get_model())
+        # board = game.board
+        # moves, moves_state = game.get_valid_moves(player_turn)
 
-        if len(move_selected) == 3:
-            selected_move,new_board_state,score = move_selected
-            scores_list.append(score[0][0])
-            new_board_states_list.append(new_board_state)
+        # print(moves)
+        # print(moves_state)
+
+        # move_selected = oware_moves.move_selector(oware_model.get_model())
+
+        # if len(move_selected) == 3:
+        #     selected_move,new_board_state,score = move_selected
+        #     scores_list.append(score[0][0])
+        #     new_board_states_list.append(new_board_state)
         
-        if player_turn.name == 'agent':
-            train_model = True
-            selected_house = coordinates_houses_map.get(selected_move)
-        elif player_turn.name == 'opponent':
+        # if player_turn.name == 'agent':
+        #     train_model = True
+        #     selected_house = coordinates_houses_map.get(selected_move)
+
+        if player_turn.name == 'opponent':
            
-            move = opponent_move_selector.capture_move_check(game,oware_moves.legal_moves_dict,player_turn,player_opponent)
-            selected_house = coordinates_houses_map.get(move)
+            # move = opponent_move_selector.capture_move_check(game,oware_moves.legal_moves_dict,player_turn,player_opponent)
+            # selected_house = coordinates_houses_map.get(move)
+            state = np.array(game.board.get_seeds())
+            neutral_state = game.change_perspective(state,player_turn)
+            mcts_propbs = mcts.search(neutral_state,player_turn,player_opponent)
+            action = np.argmax(mcts_propbs)
+            print(action)
+            selected_house = f'House{action+1}'
+
+
         else:
             selected_house =  game.get_selected_house(player_turn)
         
-        #selected_house =  game.get_selected_house(player_turn)
+        
+
+    
 
         print("      ",selected_house)
 
@@ -189,7 +208,7 @@ start_time = time.time()
 
 while(game_counter <= no_of_games ):
      
-     player_one = Player('agent1',PLAYER_ONE_HOUSES,0)
+     player_one = Player('opponent',PLAYER_ONE_HOUSES,0)
      player_two = Player('opponent1',PLAYER_TWO_HOUSES,0)
      oware_results = oware_cartesi(player_one,player_two)
 

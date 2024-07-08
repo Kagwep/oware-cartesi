@@ -1,6 +1,6 @@
 from board import Board
 from state import State
-from constants import NUMBER_OF_HOUSES, PLAYER_ONE_HOUSES , PLAYER_TWO_HOUSES,HOUSES
+from constants import NUMBER_OF_HOUSES, PLAYER_ONE_HOUSES , PLAYER_TWO_HOUSES,HOUSES,NUMBER_OF_HOUSES
 from oware_moves import OwareMoves
 from move_simulator import MoveSimulator
 import numpy as np
@@ -13,6 +13,7 @@ class GamePlay():
         self.skip_house = ''
         self.oware_moves = OwareMoves()
         self.move_simulator = MoveSimulator()
+        self.action_size = NUMBER_OF_HOUSES
 
        
         
@@ -350,8 +351,8 @@ class GamePlay():
         return result
     
 
-    def get_valid_moves(self,game,player_turn):
-         moves, moves_state = self.oware_moves.legal_moves_generator(game,player_turn)
+    def get_valid_moves(self,player_turn,seeds):
+         moves, moves_state = self.oware_moves.legal_moves_generator(seeds,player_turn)
          return moves, moves_state
     
 
@@ -360,6 +361,44 @@ class GamePlay():
         return seeds,captured
     
 
-    def change_perspective(self,board_state):
-        return  np.concatenate((board_state[-6:], board_state[6:-6], board_state[:6]))
+    def change_perspective(self,board_state,player):
+
+        if 'House1' in player.houses:
+            return board_state
+        else:
+            return  np.concatenate((board_state[-6:], board_state[6:-6], board_state[:6]))
+      
+    
+    def get_value_and_terminated(self,seeds, player): 
+        state = np.array(seeds)
+
+        if self.check_win(player):
+            return 1, True  # Player wins
+        
+        if self.check_draw(state, player):
+            return 0.5, True  # Draw
+
+        if np.sum(self.get_valid_moves(player,seeds)[1]) == 0:
+            return 0, True  # No valid moves left, game over
+
+        return 0, False  # Game continues
+
+    def check_win(self, player):
+        return player.captured > 24
+
+    def check_draw(self, state, player):
+        total_stones_on_board = np.sum(state)
+        return total_stones_on_board == 0 and player.captured == 24
+    
+
+    def get_opponent_value(self,player):
+        if 'House1' in player.houses:
+            player = 1
+        else:
+            player = -1
+        return -player
+
+    def get_opponent_value(self,value):
+        return -value
+
 

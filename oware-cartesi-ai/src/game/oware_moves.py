@@ -40,7 +40,7 @@ class OwareMoves(object):
 
 
 
-    def possible_moves(self,seeds,opponent_seeds, player_seeds,player,board):
+    def possible_moves(self,seeds,opponent_seeds, player_seeds,player):
 
         seeds_state = copy.deepcopy(seeds)
         # Check the condition to determine which row to select from the result_array
@@ -60,11 +60,11 @@ class OwareMoves(object):
         for col in range(len(selected_board_row)):
             selected_house = f'House{col+1}' if player_row == 1 else f'House{col+7}'
 
-            is_house_valid = self.move_simulator.is_selected_house_valid(selected_house, player,board,seeds_state)
+            is_house_valid = self.move_simulator.is_selected_house_valid(selected_house, player,seeds_state)
 
             seeds_state = copy.deepcopy(seeds)
             if is_house_valid:
-                result_seeds_state = self.move_simulator.make_move(selected_house,board,seeds_state,player)
+                result_seeds_state = self.move_simulator.make_move(selected_house,seeds_state,player)
                 moves[(player_row, col)] = np.array(result_seeds_state)
                 player_moves_state[col] = 1  # Mark this move as valid
                 seeds_state = copy.deepcopy(seeds)
@@ -79,12 +79,9 @@ class OwareMoves(object):
     
         return moves, moves_state
 
-    def legal_moves_generator(self,game,player):
-        board = game.board.get_board()
-        current_board_state,player_turn = game.state.board_state, game.state.player_turn
-        self.player_turn = player_turn
-        seeds = game.board.get_seeds()
-        player = game.state.get_player_turn()
+    def legal_moves_generator(self,seeds,player):
+
+
         opponent_houses = PLAYER_ONE_HOUSES if player.houses == PLAYER_TWO_HOUSES else PLAYER_TWO_HOUSES
 
         if 'House1' in opponent_houses:
@@ -95,7 +92,7 @@ class OwareMoves(object):
             player_seeds = seeds[:6]
             
 
-        moves, moves_state = self.possible_moves(seeds,opponent_seeds, player_seeds,player,board)
+        moves, moves_state = self.possible_moves(seeds,opponent_seeds, player_seeds,player)
 
         self.legal_moves_dict = moves
 
