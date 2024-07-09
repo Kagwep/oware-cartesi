@@ -93,6 +93,7 @@ class Node:
 
 
             if is_terminal:
+                print("player who won: ", rollout_player.name , "with seeds ", rollout_player.captured)
                 if rollout_player == -1:
                     value  = game.get_opponent_value(value)
                 return value

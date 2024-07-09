@@ -99,16 +99,21 @@ class OwareMoves(object):
         return moves, moves_state
 
 
-    def move_selector(self,model):
+    def move_selector(self,moves,model):
 
-        if self.legal_moves_dict:
+        if moves:
 
             tracker={}
-            for legal_move_coord in self.legal_moves_dict:
-                score=model.predict(self.legal_moves_dict[legal_move_coord].reshape(1,12))
+
+            
+
+            for legal_move_coord in moves:
+                score=model.predict(moves[legal_move_coord].reshape(1,12))
                 tracker[legal_move_coord]=score
-            selected_move=max(tracker, key=tracker.get)
-            new_board_state=self.legal_moves_dict[selected_move]
+            
+            print(tracker)
+            selected_move = max(tracker, key=lambda k: tracker[k]['output_0'][0][0])
+            new_board_state=moves[selected_move]
             score=tracker[selected_move]
 
             return selected_move,new_board_state,score

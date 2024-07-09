@@ -12,8 +12,19 @@ import os
 import time
 import csv
 from mcts import MCTS,Node
+import keras
 
-def oware_cartesi(player_one,player_two):
+
+def load_model(no_of_games):
+    model_path = f"/home/kagwe/cartesiprojects/oware/oware-cartesi-ai/src/game-models/agent-model-{no_of_games}"
+    tfsm_layer = keras.layers.TFSMLayer(model_path, call_endpoint='serving_default')
+    # Create a Keras model that includes only the TFSMLayer
+    model = keras.Sequential([
+        tfsm_layer
+    ])
+    return model
+
+def oware_cartesi(player_one,player_two,model=None):
 
     player_turn = player_one
 
@@ -76,11 +87,23 @@ def oware_cartesi(player_one,player_two):
         #     scores_list.append(score[0][0])
         #     new_board_states_list.append(new_board_state)
         
-        # if player_turn.name == 'agent':
-        #     train_model = True
-        #     selected_house = coordinates_houses_map.get(selected_move)
+        if player_turn.name == 'agent':
+            seeds = game.board.get_seeds()
+            moves, moves_state = game.get_valid_moves(player_turn,seeds)
+            print(moves)
+            move_selected = oware_moves.move_selector(moves,model)
+            print("called",move_selected)
 
-        if player_turn.name == 'opponent':
+            if len(move_selected) == 3:
+                selected_move,new_board_state,score = move_selected
+                # scores_list.append(score[0][0])
+                # new_board_states_list.append(new_board_state)
+
+                selected_house = coordinates_houses_map.get(selected_move)
+               
+                print(selected_house)
+
+        elif player_turn.name == 'opponent':
            
             # move = opponent_move_selector.capture_move_check(game,oware_moves.legal_moves_dict,player_turn,player_opponent)
             # selected_house = coordinates_houses_map.get(move)
@@ -207,10 +230,11 @@ save_interval = 10
 start_time = time.time()
 
 while(game_counter <= no_of_games ):
-     
+     games_player_one = 1000
+     model_player_one = load_model(games_player_one)
      player_one = Player('opponent',PLAYER_ONE_HOUSES,0)
      player_two = Player('opponent1',PLAYER_TWO_HOUSES,0)
-     oware_results = oware_cartesi(player_one,player_two)
+     oware_results = oware_cartesi(player_one,player_two,model_player_one)
 
      if oware_results is not None:
         

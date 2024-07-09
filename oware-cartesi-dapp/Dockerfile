@@ -1,27 +1,26 @@
 # syntax=docker.io/docker/dockerfile:1
 FROM --platform=linux/riscv64 cartesi/python:3.10-slim-jammy
 
-ARG MACHINE_EMULATOR_TOOLS_VERSION=0.14.1
-ADD https://github.com/cartesi/machine-emulator-tools/releases/download/v${MACHINE_EMULATOR_TOOLS_VERSION}/machine-emulator-tools-v${MACHINE_EMULATOR_TOOLS_VERSION}.deb /
-RUN dpkg -i /machine-emulator-tools-v${MACHINE_EMULATOR_TOOLS_VERSION}.deb \
-  && rm /machine-emulator-tools-v${MACHINE_EMULATOR_TOOLS_VERSION}.deb
-
-LABEL io.cartesi.rollups.sdk_version=0.6.0
+LABEL io.sunodo.sdk_version=0.2.0
 LABEL io.cartesi.rollups.ram_size=128Mi
 
-ARG DEBIAN_FRONTEND=noninteractive
+ARG MACHINE_EMULATOR_TOOLS_VERSION=0.12.0
 RUN <<EOF
 set -e
 apt-get update
-apt-get install -y --no-install-recommends \
-  busybox-static=1:1.30.1-7ubuntu3
-rm -rf /var/lib/apt/lists/* /var/log/* /var/cache/*
-useradd --create-home --user-group dapp
+apt-get install -y --no-install-recommends busybox-static=1:1.30.1-7ubuntu3 ca-certificates=20230311ubuntu0.22.04.1 curl=7.81.0-1ubuntu1.15 build-essential python3-dev libopenblas0-serial libgomp1
+curl -fsSL https://github.com/cartesi/machine-emulator-tools/releases/download/v${MACHINE_EMULATOR_TOOLS_VERSION}/machine-emulator-tools-v${MACHINE_EMULATOR_TOOLS_VERSION}.tar.gz \
+  | tar -C / --overwrite -xvzf -
+rm -rf /var/lib/apt/lists/*
 EOF
+
+
 
 ENV PATH="/opt/cartesi/bin:${PATH}"
 
 WORKDIR /opt/cartesi/dapp
+
+
 COPY ./requirements.txt .
 
 RUN <<EOF
@@ -29,6 +28,10 @@ set -e
 pip install -r requirements.txt --no-cache
 find /usr/local/lib -type d -name __pycache__ -exec rm -r {} +
 EOF
+
+COPY ./models ./models
+
+COPY ./game ./game
 
 COPY ./dapp.py .
 

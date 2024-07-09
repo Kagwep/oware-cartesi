@@ -1,13 +1,21 @@
 from os import environ
 import logging
 import requests
-from oware_logic.oware_moves import OwareMoves
-from oware_logic.player import Player
-from oware_logic.state import State
-from oware_logic.houses import Houses
+from game.player import Player
+from game.gameplay import GamePlay
+from game.constants import PLAYER_ONE_HOUSES,PLAYER_TWO_HOUSES
+from game.oware_moves import OwareMoves
+from game.oware_model import OwareModel
+from game.coordinate_house_map import coordinates_houses_map
+from game.opponent_move_selector import OpponentMovesSelector
 import json
 import binascii
 import tflite_runtime.interpreter as tflite
+import numpy as np
+import os
+import time
+import csv
+import keras
 
 
 logging.basicConfig(level="INFO")
@@ -25,6 +33,10 @@ game_houses =  Houses()
 
 agent_oware_moves = []
 
+
+def load_model(model_name):
+    model = tflite.Interpreter(model_path=f"./models/{model_name}.tflite")
+    return model
 
 def get_agent_move(model,current_board_state,player_name):
 
