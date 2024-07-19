@@ -62,7 +62,7 @@ class Node:
     def simulate(self):
 
         
-        value, is_terminal = self.game.get_value_and_terminated(self.state.tolist(), self.player)
+        value, is_terminal = self.game.get_value_and_terminated(self.opponent, self.player)
 
         value = self.game.get_opponent_value(value)
 
@@ -74,6 +74,8 @@ class Node:
         rollout_opponent = copy.deepcopy(self.opponent)
         game =  copy.deepcopy(self.game)
         board = game.board
+
+        count = 0
         
 
 
@@ -81,7 +83,7 @@ class Node:
 
             # valid_moves = self.game.get_valid_moves(rollout_state)
 
-            self.moves, valid_moves = self.game.get_valid_moves(rollout_player,rollout_state.tolist())
+            moves, valid_moves = game.get_valid_moves(rollout_player,rollout_state.tolist())
 
             action  = np.random.choice(np.where(valid_moves == 1)[0])
             # rollout_state = self.game.get_next_state(rollout_state, action,rollout_player)
@@ -89,12 +91,17 @@ class Node:
             rollout_player.captured += captured
             rollout_state = np.array(seeds)
             board = game.board
-            value, is_terminal = game.get_value_and_terminated(rollout_state.tolist(), rollout_player)
 
+            if rollout_opponent.captured == rollout_player.captured:
+                count += 1
+            else:
+                count = 0
+            
+            value, is_terminal = game.get_value_and_terminated(rollout_opponent, rollout_player, count)
 
             if is_terminal:
-                print("player who won: ", rollout_player.name , "with seeds ", rollout_player.captured)
-                if rollout_player == -1:
+                print("results:  ", value,  rollout_player.name , "with seeds ", rollout_player.captured)
+                if  'House7' in rollout_player.houses:
                     value  = game.get_opponent_value(value)
                 return value
             
@@ -133,7 +140,7 @@ class MCTS:
             while node.is_fully_exanded():
                 node = node.select()
             board = self.game.board
-            value, is_terminal = self.game.get_value_and_terminated(state.tolist(), player)
+            value, is_terminal = self.game.get_value_and_terminated(opponent, player)
 
             value  = self.game.get_opponent_value(value)
 

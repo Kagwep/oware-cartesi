@@ -1,5 +1,5 @@
-from house import House
-from constants import NUMBER_OF_HOUSES
+from .house import House
+from .constants import NUMBER_OF_HOUSES
 
 class Board:
     
@@ -13,11 +13,9 @@ class Board:
             house = House(i, seeds_number)
             self.board[name] = house
 
-
     def get_board(self):
         return self.board
     
-
     def get_seeds(self):
         return [house.seeds_number for house in self.board.values()]
 

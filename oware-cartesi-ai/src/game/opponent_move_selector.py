@@ -1,13 +1,12 @@
-from coordinate_house_map import coordinates_houses_map
+from .coordinate_house_map import coordinates_houses_map
 import numpy as np
 import random
-from constants import NUMBER_OF_HOUSES, PLAYER_ONE_HOUSES , PLAYER_TWO_HOUSES,HOUSES
-from oware_moves import OwareMoves
+from .constants import NUMBER_OF_HOUSES, PLAYER_ONE_HOUSES , PLAYER_TWO_HOUSES,HOUSES
+from .oware_moves import OwareMoves
 
 class OpponentMovesSelector:
 
     def __init__(self) -> None:
-        self.temp_board = None
         self.temp_player = None
         self.oware_moves = OwareMoves()
         self.temp_opponent = None
@@ -46,51 +45,38 @@ class OpponentMovesSelector:
         return best_moves[0]
             
     def apply_secondary_criteria(self, best_moves, legal_moves_dict):
-
         self.temp_player, self.temp_opponent = self.temp_opponent, self.temp_player
-
-        move_less = ''
-        current_max = 0
-
+        move_less = best_moves[0]  # Initialize with the first best move
+        current_max = float('-inf')  # Start with negative infinity
         for best_move in best_moves:
             seeds = self.get_state_for_move(best_move, legal_moves_dict)
             opponent_houses = PLAYER_ONE_HOUSES if self.temp_player.houses == PLAYER_TWO_HOUSES else PLAYER_TWO_HOUSES
-
             if 'House1' in opponent_houses:
                 opponent_seeds = seeds[:6]
                 player_seeds = seeds[6:]
             else:
                 opponent_seeds = seeds[6:]
                 player_seeds = seeds[:6]
-
-            moves = self.oware_moves.possible_moves(seeds, opponent_seeds, player_seeds, self.temp_player, self.temp_board)
-
-            max_seeds_on_board = 0
-            new_move = ''
-
-            for move, resulting_seeds_state in moves.items():
-                total_seeds = self.evaluate_board_seeds(resulting_seeds_state)
-
-                if total_seeds > max_seeds_on_board:
-                    max_seeds_on_board = total_seeds
-                    new_move = move
-
+            moves, moves_state = self.oware_moves.possible_moves(seeds, opponent_seeds, player_seeds, self.temp_player)
+            if not moves:  # If no moves are possible, skip this iteration
+                continue
+            max_seeds_on_board = max(self.evaluate_board_seeds(resulting_seeds_state) for resulting_seeds_state in moves.values())
             if max_seeds_on_board > current_max:
                 current_max = max_seeds_on_board
                 move_less = best_move
-
         return move_less
 
 
+    def capture_move_check(self,legal_moves_dict,player_turn,player_opponent):
+        
 
-    def capture_move_check(self,game,legal_moves_dict,player_turn,player_opponent):
 
         # Check if the dictionary has exactly one item
         if len(legal_moves_dict) == 1:
             # Retrieve the single key from the dictionary
             return next(iter(legal_moves_dict))
 
-        self.temp_board = game.board.get_board()
+        
 
         self.temp_player = player_turn
 

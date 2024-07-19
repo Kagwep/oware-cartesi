@@ -1,9 +1,11 @@
-from board import Board
-from state import State
-from constants import NUMBER_OF_HOUSES, PLAYER_ONE_HOUSES , PLAYER_TWO_HOUSES,HOUSES,NUMBER_OF_HOUSES
-from oware_moves import OwareMoves
-from move_simulator import MoveSimulator
+
+from .board import Board
+from .state import State
+from .constants import NUMBER_OF_HOUSES, PLAYER_ONE_HOUSES , PLAYER_TWO_HOUSES,HOUSES,NUMBER_OF_HOUSES
+from .oware_moves import OwareMoves
+from .move_simulator import MoveSimulator
 import numpy as np
+
 
 class GamePlay():
 
@@ -369,36 +371,31 @@ class GamePlay():
             return  np.concatenate((board_state[-6:], board_state[6:-6], board_state[:6]))
       
     
-    def get_value_and_terminated(self,seeds, player): 
-        state = np.array(seeds)
+    def get_value_and_terminated(self,rollout_opponent, rollout_player, count=0):
 
-        if self.check_win(player):
+
+        if self.check_win(rollout_opponent, rollout_player):
             return 1, True  # Player wins
         
-        if self.check_draw(state, player):
+        if self.check_draw(rollout_opponent, rollout_player):
             return 0.5, True  # Draw
-
-        if np.sum(self.get_valid_moves(player,seeds)[1]) == 0:
-            return 0, True  # No valid moves left, game over
+        
+        if self.in_stale_mate(count):
+            return 0.5, True
 
         return 0, False  # Game continues
 
-    def check_win(self, player):
-        return player.captured > 24
+    def check_win(self,  rollout_opponent, rollout_player):
+        return rollout_opponent.captured > 24 or rollout_player.captured > 24
 
-    def check_draw(self, state, player):
-        total_stones_on_board = np.sum(state)
-        return total_stones_on_board == 0 and player.captured == 24
+    def check_draw(self, rollout_opponent, rollout_player):
+        return rollout_opponent.captured and rollout_player.captured == 24
     
-
-    def get_opponent_value(self,player):
-        if 'House1' in player.houses:
-            player = 1
-        else:
-            player = -1
-        return -player
 
     def get_opponent_value(self,value):
         return -value
+    
+    def in_stale_mate(self,count):
+        return True if count > 100 else False
 
 

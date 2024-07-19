@@ -40,7 +40,7 @@ class GameplayEvaluationMoves(object):
 
 
 
-    def possible_moves(self,seeds,opponent_seeds, player_seeds,player,board):
+    def possible_moves(self,seeds,opponent_seeds, player_seeds,player):
 
         seeds_state = copy.deepcopy(seeds)
         # Check the condition to determine which row to select from the result_array
@@ -54,29 +54,34 @@ class GameplayEvaluationMoves(object):
         # Initialize moves dictionary to store coordinates and updated board states
         moves = {}
 
+        player_moves_state = np.zeros(len(player_seeds), dtype=np.uint8)
+        opponent_moves_state = np.zeros(len(player_seeds), dtype=np.uint8)
+
         for col in range(len(selected_board_row)):
             selected_house = f'House{col+1}' if player_row == 1 else f'House{col+7}'
 
-            is_house_valid = self.move_simulator.is_selected_house_valid(selected_house, player,board,seeds_state)
+            is_house_valid = self.move_simulator.is_selected_house_valid(selected_house, player,seeds_state)
 
             seeds_state = copy.deepcopy(seeds)
-            if (selected_house in player.houses) and is_house_valid:
-                result_seeds_state = self.move_simulator.make_move(selected_house,board,seeds_state,player)
+            if is_house_valid:
+                result_seeds_state = self.move_simulator.make_move(selected_house,seeds_state,player)
                 moves[(player_row, col)] = np.array(result_seeds_state)
+                player_moves_state[col] = 1  # Mark this move as valid
                 seeds_state = copy.deepcopy(seeds)
             else:
                 seeds_state = copy.deepcopy(seeds)
 
-
+        # Combine player and opponent moves states based on player_row
+        if player_row == 0:
+            moves_state = np.concatenate((opponent_moves_state, player_moves_state))
+        else:
+            moves_state = np.concatenate((player_moves_state, opponent_moves_state))
     
-        return moves
+        return moves, moves_state
 
-    def legal_moves_generator(self,game,player):
-        board = game.board.get_board()
-        current_board_state,player_turn = game.state.board_state, game.state.player_turn
-        self.player_turn = player_turn
-        seeds = game.board.get_seeds()
-        player = game.state.get_player_turn()
+    def legal_moves_generator(self,seeds,player):
+
+
         opponent_houses = PLAYER_ONE_HOUSES if player.houses == PLAYER_TWO_HOUSES else PLAYER_TWO_HOUSES
 
         if 'House1' in opponent_houses:
@@ -87,30 +92,33 @@ class GameplayEvaluationMoves(object):
             player_seeds = seeds[:6]
             
 
-        moves = self.possible_moves(seeds,opponent_seeds, player_seeds,player,board)
+        moves, moves_state = self.possible_moves(seeds,opponent_seeds, player_seeds,player)
 
         self.legal_moves_dict = moves
 
+        return moves, moves_state
 
-    def move_selector(self, model):
-        if self.legal_moves_dict:
-            tracker = {}
-            for legal_move_coord in self.legal_moves_dict:
-                # Ensure prediction is reshaped and extract scalar value
-                prediction = model.predict(self.legal_moves_dict[legal_move_coord].reshape(1, -1))
-                # Extract scalar value from prediction
-                score = prediction[0][0] if isinstance(prediction, np.ndarray) else prediction.items()
-                tracker[legal_move_coord] = score
+
+    def move_selector(self,moves,model):
+
+        if moves:
+
+            tracker={}
+
+            for legal_move_coord in moves:
+                score=model.predict(moves[legal_move_coord].reshape(1,12))
+                tracker[legal_move_coord]=score
             
-            # Find the move with the maximum score
-            selected_move = max(tracker, key=tracker.get)
-            new_board_state = self.legal_moves_dict[selected_move]
-            score = tracker[selected_move]
+            print(tracker)
+            selected_move = max(tracker, key=lambda k: tracker[k]['output_0'][0][0])
+            new_board_state=moves[selected_move]
+            score=tracker[selected_move]
 
-            return selected_move, new_board_state, score
+            return selected_move,new_board_state,score
+        
         else:
             return (np.sum(self.board_numpy_status),)
-
+    
     
     
 

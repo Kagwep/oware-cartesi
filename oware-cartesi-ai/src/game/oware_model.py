@@ -5,9 +5,9 @@ from keras.optimizers import SGD
 class OwareModel:
     def __init__(self):
         self.model = Sequential([
-            Dense(18, input_dim=12, kernel_initializer='normal', activation='relu'),
+            Dense(24, input_dim=12, kernel_initializer='normal', activation='relu'),
             Dropout(0.1),
-            Dense(9, kernel_initializer='normal', activation='relu'),
+            Dense(12, kernel_initializer='normal', activation='relu'),
             Dropout(0.1),
             Dense(1, kernel_initializer='normal')
         ])

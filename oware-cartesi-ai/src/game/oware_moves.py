@@ -1,7 +1,7 @@
 import numpy as np
 import copy
-from constants import NUMBER_OF_HOUSES, PLAYER_ONE_HOUSES , PLAYER_TWO_HOUSES,HOUSES
-from move_simulator import MoveSimulator
+from .constants import NUMBER_OF_HOUSES, PLAYER_ONE_HOUSES , PLAYER_TWO_HOUSES,HOUSES
+from .move_simulator import MoveSimulator
 
 
 class OwareMoves(object):
@@ -81,7 +81,6 @@ class OwareMoves(object):
 
     def legal_moves_generator(self,seeds,player):
 
-
         opponent_houses = PLAYER_ONE_HOUSES if player.houses == PLAYER_TWO_HOUSES else PLAYER_TWO_HOUSES
 
         if 'House1' in opponent_houses:
@@ -91,7 +90,6 @@ class OwareMoves(object):
             opponent_seeds = seeds[6:]
             player_seeds = seeds[:6]
             
-
         moves, moves_state = self.possible_moves(seeds,opponent_seeds, player_seeds,player)
 
         self.legal_moves_dict = moves
@@ -99,25 +97,19 @@ class OwareMoves(object):
         return moves, moves_state
 
 
-    def move_selector(self,moves,model):
-
+    def move_selector(self, moves, model):
         if moves:
-
-            tracker={}
-
-            
-
+            tracker = {}
             for legal_move_coord in moves:
-                score=model.predict(moves[legal_move_coord].reshape(1,12))
-                tracker[legal_move_coord]=score
+                score = model.predict(moves[legal_move_coord].reshape(1, 12))
+                tracker[legal_move_coord] = score[0][0]  # Extract the float value
             
-            print(tracker)
-            selected_move = max(tracker, key=lambda k: tracker[k]['output_0'][0][0])
-            new_board_state=moves[selected_move]
-            score=tracker[selected_move]
+            #print(tracker)
+            selected_move = max(tracker, key=tracker.get)
+            new_board_state = moves[selected_move]
+            score = tracker[selected_move]
 
-            return selected_move,new_board_state,score
-        
+            return selected_move, new_board_state, score
         else:
             return (np.sum(self.board_numpy_status),)
     

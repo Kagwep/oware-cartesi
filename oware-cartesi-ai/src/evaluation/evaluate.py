@@ -9,14 +9,18 @@ from scipy.ndimage import shift
 import numpy as np
 import tensorflow as tf
 import os
+import sys
 import time
 import tflite_runtime.interpreter as tflite
 import matplotlib.pyplot as plt
 from .GameplayEvaluation import GameplayEvaluationMoves
 import keras
 
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-def oware_cartesi(player_one,player_two,model_player_one,turn):
+
+
+def oware_cartesi(player_one,player_two,model_player_one,model_player_two,turn):
 
     player_turn = turn
 
@@ -56,23 +60,34 @@ def oware_cartesi(player_one,player_two,model_player_one,turn):
 
 
         model =  model_player_one 
+        model_two = model_player_two
 
-        oware_moves.legal_moves_generator(game_play,player_turn)
-
-        move_selected = oware_moves.move_selector(model)
-
-        if len(move_selected) == 3:
-            selected_move,new_board_state,score = move_selected
-
-        
-        selected_house = coordinates_houses_map.get(selected_move)
+ 
         
         if player_turn.name == 'agent':
+            seeds = game_play.board.get_seeds()
+            moves, moves_state = game_play.get_valid_moves(player_turn,seeds)
+
+            move_selected = oware_moves.move_selector(moves,model)
+
+            if len(move_selected) == 3:
+                selected_move,new_board_state,score = move_selected
+
             selected_house = coordinates_houses_map.get(selected_move)
+
         elif player_turn.name == 'opponent':
-           
-            move = opponent_move_selector.capture_move_check(game_play,oware_moves.legal_moves_dict,player_turn,player_opponent)
-            selected_house = coordinates_houses_map.get(move)
+
+            seeds = game_play.board.get_seeds()
+            moves, moves_state = game_play.get_valid_moves(player_turn,seeds)
+
+            move_selected = oware_moves.move_selector(moves,model_two)
+
+            if len(move_selected) == 3:
+                selected_move,new_board_state,score = move_selected
+
+            selected_house = coordinates_houses_map.get(selected_move)
+            # move = opponent_move_selector.capture_move_check(game_play,oware_moves.legal_moves_dict,player_turn,player_opponent)
+            # selected_house = coordinates_houses_map.get(move)
 
 
         print(f" Current Player {player_turn.name}   has selected   ",selected_house)
@@ -152,6 +167,15 @@ def load_model(no_of_games):
     ])
     return model
 
+def load_model_two(no_of_games):
+    model_path = f"./game-models/agent-model-new-{no_of_games}"
+    tfsm_layer = keras.layers.TFSMLayer(model_path, call_endpoint='serving_default')
+    # Create a Keras model that includes only the TFSMLayer
+    model = keras.Sequential([
+        tfsm_layer
+    ])
+    return model
+
 # Define the number of games each model was trained on
 
 
@@ -169,15 +193,15 @@ start_time = time.time()
 results = []
 player_turns=[]
 while(game_play_counter <= no_of_game_plays ):
-     games_player_one = 1000  # Example: model trained on 100 games
-     games_player_two = 1000  # Example: model trained on 500 games
+     games_player_one = 20  # Example: model trained on 100 games
+     games_player_two = 100  # Example: model trained on 500 games
      model_player_one = load_model(games_player_one)
-     model_player_two = load_model(games_player_two)
+     model_player_two = load_model_two(games_player_two)
      player_one = Player('agent',PLAYER_ONE_HOUSES,0)
      player_two = Player('opponent',PLAYER_TWO_HOUSES,0)
      turn  =  player_one if game_play_counter % 2 == 0 else player_two
      player_turns.append(turn)
-     oware_results = oware_cartesi(player_one,player_two,model_player_one,turn)
+     oware_results = oware_cartesi(player_one,player_two,model_player_one,model_player_two,turn)
 
      if oware_results is not None:
         result = oware_results
@@ -210,11 +234,11 @@ fig, ax = plt.subplots()
 ax.bar(labels, wins, color=['blue', 'red', 'green'])
 ax.set_xlabel('Agents')
 ax.set_ylabel('Number of Wins')
-ax.set_title('Results of 100 game_plays Between Two Agents one 100 the other 1000 games')
+ax.set_title('Results of 100 game_plays Between Two Agents one trained 20 old the other 100 games new')
 ax.set_ylim(0, max(wins) + 10)  # Set y-axis limits to make bars not touch the top of the plot
 
 # Save the plot
-plt.savefig('./game_play_results/game_play_results_2_A_1_1000.png')
+plt.savefig('./game_play_results/game_play_results_20_1new_100.png')
 plt.close()
 
 # Save results to a text file
