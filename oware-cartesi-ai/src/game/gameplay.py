@@ -209,11 +209,14 @@ class GamePlay():
         
         oppononent_seeds,player_seeds = self.player_seeds(player,seeds)
 
+        if sum(oppononent_seeds) > 0:
+            return True
+
         is_closest_row = 'House1' in player.houses
 
-        print(player_seeds)
-        print(player.houses)
-        print(player.name)
+        # print(player_seeds)
+        # print(player.houses)
+        # print(player.name)
 
         if is_closest_row:
             house_count = 1
@@ -397,5 +400,17 @@ class GamePlay():
     
     def in_stale_mate(self,count):
         return True if count > 100 else False
+
+    def handle_cannot_distribute(self,rollout_player,rollout_opponent,rollout_state):
+
+        remainder_seeds = sum(rollout_state)
+
+        rollout_player.captured += remainder_seeds
+
+        if self.check_win(rollout_opponent, rollout_player):
+            return 1
+        
+        if self.check_draw(rollout_opponent, rollout_player):
+            return 0.5
 
 

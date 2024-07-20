@@ -116,6 +116,7 @@ def oware_cartesi(player_one,player_two,model=None):
             # selected_house = coordinates_houses_map.get(move)
             state = np.array(game.board.get_seeds())
             neutral_state = game.change_perspective(state,player_turn)
+            print(neutral_state)
             mcts_propbs = mcts.search(neutral_state,player_turn,player_opponent)
             action = np.argmax(mcts_propbs)
             print(action)

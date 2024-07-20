@@ -83,11 +83,15 @@ class Node:
 
             # valid_moves = self.game.get_valid_moves(rollout_state)
 
+            # handle scenarios where no move is available that can give the opponent seeds
+
             moves, valid_moves = game.get_valid_moves(rollout_player,rollout_state.tolist())
 
             action  = np.random.choice(np.where(valid_moves == 1)[0])
             # rollout_state = self.game.get_next_state(rollout_state, action,rollout_player)
             seeds,captured = game.get_next_state(rollout_state,action,rollout_player)
+            
+
             rollout_player.captured += captured
             rollout_state = np.array(seeds)
             board = game.board
@@ -106,6 +110,21 @@ class Node:
                 return value
             
             rollout_player,rollout_opponent = rollout_opponent,rollout_player
+
+            can_distribute = game.can_player_distribute_seeds_to_opponent(rollout_player,rollout_state.tolist())
+
+            print(can_distribute,rollout_player.name, rollout_player.captured,rollout_state.tolist())
+
+            if not can_distribute:
+
+                value = game.handle_cannot_distribute(rollout_player,rollout_opponent,rollout_state.tolist())
+
+                print("results:  ", value,  rollout_player.name , "with seeds ", rollout_player.captured)
+
+                if  'House7' in rollout_player.houses:
+                    value  = game.get_opponent_value(value)
+
+                return value
 
         
     def backpropergate(self,value):
@@ -134,6 +153,8 @@ class MCTS:
         root = Node(self.game,self.args,state,player,opponent)
 
         for search in range(self.args['num_searches']):
+
+            print(",,,,",search)
 
             node = root 
 
