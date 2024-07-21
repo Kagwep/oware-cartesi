@@ -17,9 +17,6 @@ class GamePlay():
         self.move_simulator = MoveSimulator()
         self.action_size = NUMBER_OF_HOUSES
 
-       
-        
-    
     def game_init(self,player_one,player_two,player_turn):
         board = Board()
         board.create_board()
@@ -357,7 +354,10 @@ class GamePlay():
     
 
     def get_valid_moves(self,player_turn,seeds):
+         print(seeds)
+         print(player_turn.name)
          moves, moves_state = self.oware_moves.legal_moves_generator(seeds,player_turn)
+         print(moves,moves_state)
          return moves, moves_state
     
 

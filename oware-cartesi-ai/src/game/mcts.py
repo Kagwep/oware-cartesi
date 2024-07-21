@@ -46,7 +46,7 @@ class Node:
 
         action = np.random.choice(np.where(self.expandable_moves == 1)[0])
 
-        print(action)
+        print("action",action)
 
         self.expandable_moves[action] = 0
         child_state = self.state.copy()
@@ -113,7 +113,6 @@ class Node:
 
             can_distribute = game.can_player_distribute_seeds_to_opponent(rollout_player,rollout_state.tolist())
 
-            print(can_distribute,rollout_player.name, rollout_player.captured,rollout_state.tolist())
 
             if not can_distribute:
 
@@ -175,6 +174,8 @@ class MCTS:
 
             for child in root.children:
                 action_propbs[child.action_taken] = child.visit_count
+
+            print(action_propbs)
 
 
             action_propbs /= np.sum(action_propbs)
