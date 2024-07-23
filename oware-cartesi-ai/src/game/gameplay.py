@@ -7,6 +7,7 @@ from .move_simulator import MoveSimulator
 import numpy as np
 
 
+
 class GamePlay():
 
     def __init__(self) -> None:
@@ -251,7 +252,7 @@ class GamePlay():
             if capture_move_valid:
                 return True
             else:
-                print(" This Move Captures all the opponent seeds")
+                # print(" This Move Captures all the opponent seeds")
                 return False
         else:
             return False
@@ -354,10 +355,10 @@ class GamePlay():
     
 
     def get_valid_moves(self,player_turn,seeds):
-         print(seeds)
-         print(player_turn.name)
+        #  print(seeds)
+        #  print(player_turn.name)
          moves, moves_state = self.oware_moves.legal_moves_generator(seeds,player_turn)
-         print(moves,moves_state)
+        #  print(moves,moves_state)
          return moves, moves_state
     
 

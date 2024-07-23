@@ -13,6 +13,7 @@ import time
 import csv
 from .mcts import MCTS,Node
 import keras
+import copy
 
 
 def load_model(no_of_games):
@@ -116,8 +117,10 @@ def oware_cartesi(player_one,player_two,model=None):
             # selected_house = coordinates_houses_map.get(move)
             state = np.array(game.board.get_seeds())
             neutral_state = game.change_perspective(state,player_turn)
-            print(neutral_state)
-            mcts_propbs = mcts.search(neutral_state,player_turn,player_opponent)
+            print("sent seeds ", game.board.get_seeds())
+            player_turn_copy = copy.deepcopy(player_turn)
+            oppponent_copy = copy.deepcopy(player_opponent)
+            mcts_propbs = mcts.search(neutral_state,player_turn_copy,oppponent_copy)
             action = np.argmax(mcts_propbs)
             print(action)
             selected_house = f'House{action+1}'

@@ -46,7 +46,7 @@ class Node:
 
         action = np.random.choice(np.where(self.expandable_moves == 1)[0])
 
-        print("action",action)
+        # print("action",action)
 
         self.expandable_moves[action] = 0
         child_state = self.state.copy()
@@ -104,7 +104,7 @@ class Node:
             value, is_terminal = game.get_value_and_terminated(rollout_opponent, rollout_player, count)
 
             if is_terminal:
-                print("results:  ", value,  rollout_player.name , "with seeds ", rollout_player.captured)
+                # print("results:  ", value,  rollout_player.name , "with seeds ", rollout_player.captured)
                 if  'House7' in rollout_player.houses:
                     value  = game.get_opponent_value(value)
                 return value
@@ -118,7 +118,7 @@ class Node:
 
                 value = game.handle_cannot_distribute(rollout_player,rollout_opponent,rollout_state.tolist())
 
-                print("results:  ", value,  rollout_player.name , "with seeds ", rollout_player.captured)
+                # print("results:  ", value,  rollout_player.name , "with seeds ", rollout_player.captured)
 
                 if  'House7' in rollout_player.houses:
                     value  = game.get_opponent_value(value)
@@ -153,13 +153,11 @@ class MCTS:
 
         for search in range(self.args['num_searches']):
 
-            print(",,,,",search)
-
             node = root 
 
             while node.is_fully_exanded():
                 node = node.select()
-            board = self.game.board
+       
             value, is_terminal = self.game.get_value_and_terminated(opponent, player)
 
             value  = self.game.get_opponent_value(value)
@@ -170,14 +168,14 @@ class MCTS:
 
             node.backpropergate(value)
 
-            action_propbs = np.zeros(self.game.action_size)
+        action_propbs = np.zeros(self.game.action_size)
 
-            for child in root.children:
-                action_propbs[child.action_taken] = child.visit_count
+        for child in root.children:
+            action_propbs[child.action_taken] = child.visit_count
 
-            print(action_propbs)
+        print(action_propbs)
 
 
-            action_propbs /= np.sum(action_propbs)
+        action_propbs /= np.sum(action_propbs)
 
-            return action_propbs
+        return action_propbs

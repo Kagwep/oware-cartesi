@@ -191,7 +191,7 @@ class MoveSimulator:
             if capture_move_valid:
                 return True
             else:
-                print(" This Move Captures all the opponent seeds")
+                # print(" This Move Captures all the opponent seeds")
                 return False
         else:
             return False
