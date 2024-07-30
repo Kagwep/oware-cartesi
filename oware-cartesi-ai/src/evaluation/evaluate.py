@@ -199,8 +199,8 @@ start_time = time.time()
 results = []
 player_turns=[]
 while(game_play_counter <= no_of_game_plays ):
-     games_player_one = 100  # Example: model trained on 100 games
-     games_player_two = 150  # Example: model trained on 500 games
+     games_player_one = 80  # Example: model trained on 100 games
+     games_player_two = 30  # Example: model trained on 500 games
      model_player_one = load_model_tflite(games_player_one)
      model_player_two = load_model_tflite(games_player_two)
      player_one = Player('agent',PLAYER_ONE_HOUSES,0)
@@ -240,11 +240,11 @@ fig, ax = plt.subplots()
 ax.bar(labels, wins, color=['blue', 'red', 'green'])
 ax.set_xlabel('Agents')
 ax.set_ylabel('Number of Wins')
-ax.set_title('100 vs 150 tflite')
+ax.set_title('80 vs 30 tflite')
 ax.set_ylim(0, max(wins) + 10)  # Set y-axis limits to make bars not touch the top of the plot
 
 # Save the plot
-plt.savefig('./game_play_results/100vs150_tflite.png')
+plt.savefig('./game_play_results/80vs30_tflite.png')
 plt.close()
 
 # Save results to a text file

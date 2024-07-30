@@ -99,30 +99,12 @@ class GameplayEvaluationMoves(object):
         return moves, moves_state
 
 
-    # def move_selector(self,moves,model):
-
-    #     if moves:
-
-    #         tracker={}
-
-    #         for legal_move_coord in moves:
-    #             score=model.predict(moves[legal_move_coord].reshape(1,12))
-    #             tracker[legal_move_coord]=score
-            
-    #         print(tracker)
-    #         selected_move = max(tracker, key=lambda k: tracker[k]['output_0'][0][0])
-    #         new_board_state=moves[selected_move]
-    #         score=tracker[selected_move]
-
-    #         return selected_move,new_board_state,score
-        
-    #     else:
-    #         return (np.sum(self.board_numpy_status),)
-    
-    
     def move_selector(self, moves, interpreter):
         if moves:
             tracker = {}
+
+            # Allocate tensors
+            interpreter.allocate_tensors()
 
             # Get input and output details
             input_details = interpreter.get_input_details()
@@ -151,5 +133,4 @@ class GameplayEvaluationMoves(object):
             return selected_move, new_board_state, score
         else:
             return (np.sum(self.board_numpy_status),)
-
 

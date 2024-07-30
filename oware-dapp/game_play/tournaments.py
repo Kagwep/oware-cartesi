@@ -1,28 +1,56 @@
 import random
 import time
+from collections import namedtuple
+from .challenge import Challenge
+
+# Define a Player named tuple to store player attributes
+OPlayer = namedtuple('Player', ['name', 'address', 'model_name'])
 
 class Tournament:
-    def __init__(self, game, players):
-        if len(players) != 8:
-            raise ValueError("Tournament requires exactly 8 players")
-        
-        self.game = game
-        self.players = players
+    def __init__(self,creator, number_of_players, rounds_per_challenge):
+        self.creator = creator
+        self.max_players = number_of_players
+        self.rounds_per_challenge = rounds_per_challenge
+        self.players = []
         self.challenges = []
+        self.next_challenge_id = 1
         self.round = 1
         self.winners = []
         self.tournament_winner = None
         self.started_at = None
         self.ended_at = None
+        self.allowable_player_counts = [4, 6, 8, 10, 12, 14, 16]
+
+        if not self.is_valid_player_count(self.number_of_players):
+            raise ValueError(f"Invalid number of players. Must be an even number between 4 and 16 inclusive.")
+  
+
+    def add_player(self,name,address,model_name= None):
+        if len(self.players) >= self.max_players:
+            raise ValueError("The tournament is already full")
+        player = OPlayer(name, address, model_name)
+        self.players.append(player)
+        if len(self.players) == self.max_players:
+            self.start()
 
     def start(self):
         self.started_at = time.time()
-        self.create_first_round()
+        self.create_fixtures(self.players)
+
+    def create_fixtures(self, players):
+        """ Randomly pair players and create fixtures for a round of challenges. """
+        random.shuffle(players)
+        self.challenges = []  # Clear existing challenges if any
+        for i in range(0, len(players), 2):
+            if i + 1 < len(players):  # Ensure there's a pair to form a challenge
+                challenge_id = self.next_challenge_id
+                new_challenge = Challenge(players[i], players[i + 1], self.rounds_per_challenge, challenge_id)
+                self.challenges.append(new_challenge)
 
     def create_first_round(self):
         random.shuffle(self.players)
-        for i in range(0, 8, 2):
-            challenge = Challenge(self.players[i], f"R1-M{i//2+1}")
+        for i in range(0, len(self.players), 2):
+            challenge = Challenge(self.players[i], f"R1-M{i//2+1}", self.rounds_per_challenge)
             challenge.add_opponent(self.players[i+1])
             challenge.game = self.game
             challenge.spawn()
@@ -45,39 +73,15 @@ class Tournament:
         return False  # Tournament continues
 
     def create_next_round(self):
+        new_round_winners = []
         for i in range(0, len(self.winners), 2):
-            challenge = Challenge(self.winners[i], f"R{self.round}-M{i//2+1}")
+            challenge = Challenge(self.winners[i], f"R{self.round}-M{i//2+1}", self.rounds_per_challenge)
             challenge.add_opponent(self.winners[i+1])
             challenge.game = self.game
             challenge.spawn()
-            self.challenges.append(challenge)
+            new_round_winners.append(challenge)
+        self.challenges = new_round_winners
 
-    def get_current_challenges(self):
-        return [c for c in self.challenges if c.id.startswith(f"R{self.round}")]
-
-    def get_challenge_by_player(self, player_address):
-        current_challenges = self.get_current_challenges()
-        for challenge in current_challenges:
-            if player_address in [challenge.player_one, challenge.player_two]:
-                return challenge
-        return None
-
-    def make_move(self, player_address, action):
-        challenge = self.get_challenge_by_player(player_address)
-        if challenge and challenge.turn == player_address:
-            state, game_ended, winner = challenge.move(action, challenge.state)
-            if game_ended:
-                self.advance_tournament()
-            return state, game_ended, winner
-        return None, False, False
-
-    def get_tournament_status(self):
-        return {
-            "round": self.round,
-            "current_challenges": [{"id": c.id, "player_one": c.player_one, "player_two": c.player_two, "turn": c.turn} 
-                                   for c in self.get_current_challenges()],
-            "winners": self.winners,
-            "tournament_winner": self.tournament_winner,
-            "started_at": self.started_at,
-            "ended_at": self.ended_at
-        }
+    def is_valid_player_count(self, count):
+        """ Validate the player count is within the allowed range. """
+        return count in self.allowable_player_count

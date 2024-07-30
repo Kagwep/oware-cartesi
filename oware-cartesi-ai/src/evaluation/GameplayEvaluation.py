@@ -124,6 +124,9 @@ class GameplayEvaluationMoves(object):
         if moves:
             tracker = {}
 
+            # Allocate tensors
+            interpreter.allocate_tensors()
+
             # Get input and output details
             input_details = interpreter.get_input_details()
             output_details = interpreter.get_output_details()
@@ -151,5 +154,4 @@ class GameplayEvaluationMoves(object):
             return selected_move, new_board_state, score
         else:
             return (np.sum(self.board_numpy_status),)
-
 
