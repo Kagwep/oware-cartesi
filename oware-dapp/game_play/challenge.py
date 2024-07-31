@@ -45,6 +45,10 @@ class Challenge:
         self.result = None
         self.rounds = rounds
         self.round_winners = {} 
+        self.current_round = 1
+        self.player_one_wins = 0
+        self.player_two_wins = 0
+        self.tiebreak_round = False
         
         
     def add_opponent(self,name,address,model_name= None):
@@ -122,27 +126,66 @@ class Challenge:
                 if not seeds_distribution_possible:
                     print("Automatic capture. Ending game_play.")
                     
-                    result = self.game.state.update_capture_and_win(self.turn,player_seeds)  
+                    result = self.game.state.update_capture_and_win(self.turn,player_seeds) 
+
+        challenge_winner, challenge_ended = self.check_winner(result) 
         
-        return result
+        return {
+            "game_result": result,
+            "challenge_ended": challenge_ended,
+            "challenge_winner": challenge_winner,
+            "current_round": self.current_round,
+            "player_one_wins": self.player_one_wins,
+            "player_two_wins": self.player_two_wins,
+        }
     
     def load_model_tflite(self,name):
         model = tflite.Interpreter(model_path=f"./models-tflite/agent-model-new-{name}.tflite")
         return model
 
+    def update_round_winner(self, result):
+        """Update the round winner based on the game result."""
+        if result == 1:
+            winner = self.player_one
+            self.player_one_wins += 1
+        elif result == 2:
+            winner = self.player_two
+            self.player_two_wins += 1
+        else:
+            winner = None  # Draw
 
-    def update_round_winner(self, round_number, winner_address):
-        """Update the dictionary with the winner of the specified round."""
-        self.round_winners[round_number] = winner_address
+        self.round_winners[self.current_round] = winner
                     
-
-                    
-
-
-
+    
+    def check_winner(self, result):
+        self.update_round_winner(result)
         
+        if self.current_round < self.rounds:
+            self.current_round += 1
+            self.spawn()  # Reset the game for the next round
+            return None, False  # No overall winner yet, challenge not ended
+        else:
+            challenge_winner = self.determine_challenge_winner()
+            if challenge_winner is None:
+                return self.tiebreaker()
+            return challenge_winner, True  # Challenge ended
 
-        
+    def determine_challenge_winner(self):
+        if self.player_one_wins > self.player_two_wins:
+            self.winner =  self.player_one
+            return self.player_one, True
+        elif self.player_two_wins > self.player_one_wins:
+            self.winner = self.player_two
+            return self.player_two, True
+        else:
+            return None, False  # Tie, need tiebreaker
+
+    def tiebreaker(self):
+        print("Tie detected. Starting tiebreaker round.")
+        self.tiebreak_round = True
+        self.current_round += 1
+        self.spawn()  # Reset the game for the tiebreaker round
+        return None, False  # No winner yet, challenge continues with tiebreaker        
 
 
 
