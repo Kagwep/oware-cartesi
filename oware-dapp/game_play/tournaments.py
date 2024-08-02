@@ -25,7 +25,7 @@ class Tournament:
         self.active_round = 1
         self.round_winners = {}
 
-        if not self.is_valid_player_count(self.number_of_players):
+        if not self.is_valid_player_count(self.max_players):
             raise ValueError(f"Invalid number of players. Must be an even number between 4 and 16 inclusive.")
   
 
@@ -53,7 +53,6 @@ class Tournament:
                 new_challenge = Challenge(player_one.name, player_one.address,self.rounds_per_challenge,challenge_id,player_one.model_name)
                 new_challenge.add_opponent(player_two.name, player_two.address, player_two.model_name)
                 new_challenge.spawn()
-                self.challenges.append(new_challenge)
                 self.challenges[challenge_id] = new_challenge
                 round_fixtures.append(Fixture(challenge_id, player_one, player_two))
                 self.next_challenge_id += 1

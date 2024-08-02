@@ -22,7 +22,7 @@ yarn
 
 ## Running
 
-First of all, you should run an `echo-xxx` back-end in your local environment. It could be [echo-python](../echo-python/), [echo-js](../echo-python/), or any other such example.
+First of all, you should run an `echo-xxx` back-end in your local environment. It could be [oware-dapp](../oware-dapp/), [echo-js](../oware-dapp/), or any other such example.
 
 With an Echo DApp running, open a separate terminal in this project's directory, and run:
 

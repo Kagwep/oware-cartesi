@@ -2,7 +2,6 @@ from os import environ
 import logging
 import requests
 from utils.utils import HexConverter
-from game_play.challenge import Challenge
 import json
 import copy
 
@@ -13,7 +12,7 @@ player_challenges = {}
 challenge_next_id = 0
 tournament_next_id = 0
 tonourments = {}
-player_tournaments = {}
+player_tournaments = {}  
 
 
 logging.basicConfig(level="INFO")
@@ -237,11 +236,20 @@ advance_method_handlers = {
     'create_challenge': create_challenge,
     'accept_challenge': accept_challenge,
     'make_move': make_move,
-    'spawn': spawn
+    'spawn': spawn,
+    'add_player_to_leaderboard':add_player_to_leaderboard,
+    'update_player_score':update_player_score,
+    'create_tournament': create_tournament,
+    'join_tournament':join_tournament,
+    'make_move_tournament':make_move_tournament,
 }
 
 inspect_handler_methods = {
-    'get_all_challenges': get_all_challenges
+    'get_all_challenges': get_all_challenges,
+    'get_top_players':get_top_players,
+    'get_round_fixtures':get_round_fixtures,
+    'get_round_fixture':get_round_fixture,
+    'get_player_fixture':get_player_fixture
 }
 
 finish = {"status": "accept"}

@@ -1,16 +1,9 @@
 import time 
 import random
-import copy
 from collections import namedtuple
 from game.player import Player
 from game.gameplay import GamePlay
 from game.constants import PLAYER_ONE_HOUSES,PLAYER_TWO_HOUSES
-from game.oware_moves import OwareMoves
-from game.oware_model import OwareModel
-from game.coordinate_house_map import coordinates_houses_map
-from game.opponent_move_selector import OpponentMovesSelector
-from scipy.ndimage import shift
-import numpy as np
 import os
 import sys
 import time
@@ -102,7 +95,6 @@ class Challenge:
                 self.players_captures_track_count = 0
                 self.player_one_previous_captured = self.player_one_current_captured
                 self.player_two_previous_captured = self.player_two_current_captured
-
 
             # Check if stalemate count reached
             if self.players_captures_track_count >= self.stale_mate_count:
