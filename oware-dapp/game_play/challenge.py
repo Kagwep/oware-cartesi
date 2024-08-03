@@ -4,6 +4,7 @@ from collections import namedtuple
 from game.player import Player
 from game.gameplay import GamePlay
 from game.constants import PLAYER_ONE_HOUSES,PLAYER_TWO_HOUSES
+from game.coordinate_house_map import coordinates_houses_map
 import os
 import sys
 import time
@@ -177,8 +178,17 @@ class Challenge:
         self.tiebreak_round = True
         self.current_round += 1
         self.spawn()  # Reset the game for the tiebreaker round
-        return None, False  # No winner yet, challenge continues with tiebreaker        
+        return None, False  # No winner yet, challenge continues with tiebreaker 
 
+    def select_house(self,model):
 
+        if model:
+            seeds = self.game.board.get_seeds()
+            moves, moves_state = self.game.get_valid_moves(self.turn,seeds)
+            move_selected = self.oware_moves.move_selector(moves,model)
+            if len(move_selected) == 3:
+                selected_move,new_board_state,score = move_selected
 
-
+            selected_house = coordinates_houses_map.get(selected_move)
+            
+        return selected_house  

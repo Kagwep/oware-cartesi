@@ -4,28 +4,16 @@ import requests
 from utils.utils import HexConverter
 import json
 import copy
+from .store import Store
 
 hexConverter = HexConverter()
-
-challenges = {}
-player_challenges = {}
-challenge_next_id = 0
-tournament_next_id = 0
-tonourments = {}
-player_tournaments = {}  
-
+store = Store()
 
 logging.basicConfig(level="INFO")
 logger = logging.getLogger(__name__)
 
 rollup_server = environ["ROLLUP_HTTP_SERVER_URL"]
 logger.info(f"HTTP rollup_server url is {rollup_server}")
-
-def read_challenge_next_id():
-    return challenge_next_id 
-
-def set_challenge_next_id(challenge_next_id):
-    challenge_next_id = challenge_next_id
 
 def add_notice(data):
     logger.info(f"Received advance request data {data}")
@@ -87,70 +75,39 @@ def handle_inspect(data):
 
 
 def create_challenge(payload,sender):
-    if player_challenges.get(sender) is not None:
-        add_report("Player is already in a challenge")
+
+    result = store.create_challenge(sender, payload)
+
+    if result["success"]:
+        add_notice(f"challenge with id {result['challenge_id']} was was created by {sender} ")
+        return "accept"
+    else:
+        add_report(f"Failed to create challenge. Error: {result['error']}")
         return  "reject"
-    
-    next_id = read_next_id()
-    
-    challenge = Challenge(sender,next_id)
-    challenges[next_id] = challenge
-    player_challenges[sender] = next_id
 
-    add_notice(f"challenge with id {next_id} was was created by {sender} ")
 
-    next_id +=1
-
-    return "accept"
 
 def accept_challenge(payload,sender):
 
-    challenge_id = payload.get("challenge_id")
-    challenge = challenges.get(challenge_id)
+    result = store.join_challenge(sender, payload)
 
-    if not challenge:
-        add_report("Challenge does not exists")
+    if result["success"]:
+        add_notice(f" challenge with id {result['challenge_id']} was accepted by player {sender}")
+        return "accept"
+    else:
+        add_report(f"Failed to join challenge. Error: {result['error']}")
         return "reject"
-    
-    if sender == challenge.creator_address:
-        add_report("Cannot join own challenge")
-        return "reject"
-    
-    challenge.add_opponent(sender)
-
-    player_challenges[sender] = challenge_id
-
-    add_notice(f" challenge with id {challenge_id} was accepted by player {sender}")
-
-    return "accept"
-
 
 def spawn(payload,sender):
 
-    challenge_id = payload.get("challenge_id")
+    result = store.start_challenge(sender, payload)
 
-    if not challenge:
-        add_report("Challenge does not exists")
+    if result["success"]:
+        add_notice(f" Creator {sender} of challege {result['challenge_id']} has initialized the game")
+        return 'accept'
+    else:
+        add_report(f"Failed to start challenge. Error: {result['error']}")
         return "reject"
-    
-    challenge = challenges.get(challenge_id)
-
-    if sender != challenge.creator_address:
-        add_report("Sender is not the creator")
-        return "reject"
-    
-    if not challenge.opponent_address:
-        add_report("No opponent")
-        return "reject"
-    
-    challenge.spawn()
-
-    add_notice(f" Creator {sender} of challege {challenge_id} has initialized the game")
-
-    return "accept"
-
-    
-    
 
 def make_move(payload,sender):
 
