@@ -158,6 +158,27 @@ class Store:
             self.add_player_tournament(player_address, tournament_id)
             return True
         return False
+    
+    def make_move(self,sender, challenge_data):
+
+        action = challenge_data.get("action")
+        challenge_id = challenge_data.get("challenge_id")
+
+        if not challenge_id:
+          
+            return 
+        
+        challenge = self.challenges.get(challenge_id)
+
+
+        if not challenge:
+           
+            return 
+        
+        if sender != challenge.turn or not challenge.in_progress:
+            
+            return 
+
 
     def get_next_challenge_id(self):
         self.challenge_next_id += 1
@@ -193,3 +214,12 @@ class Store:
 
     def get_player_tournaments(self, player_address):
         return self.player_tournaments.get(player_address, set())
+    
+
+    def delete_player_from_active_challenge(self,challenge):
+
+        if self.player_challenges.get(challenge.opponet) is not None:
+            del self.player_challenges[challenge.opponet]
+
+        if self.player_challenges.get(challenge.creator) is not None:
+            del self.player_challenges[challenge.creator]
