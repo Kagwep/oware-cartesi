@@ -1,7 +1,9 @@
 from game_play.challenge import Challenge
 from game_play.tournaments import Tournament
 from utils.utils import HexConverter
-
+from game_play.game.coordinate_house_map import coordinates_houses_map
+import json
+from game_play.leaderboard import Leaderboard
 
 hexConverter = HexConverter()
 
@@ -13,6 +15,7 @@ class Store:
         self.tournament_next_id = 0
         self.tournaments = {}
         self.player_tournaments = {}
+        self.leader_board = Leaderboard()
 
     def create_challenge(self, creator_address, challenge_data):
 
@@ -161,25 +164,72 @@ class Store:
     
     def make_move(self,sender, challenge_data):
 
-        action = challenge_data.get("action")
+        house = challenge_data.get("house")
+
         challenge_id = challenge_data.get("challenge_id")
 
         if not challenge_id:
-          
-            return 
-        
+            return {
+                "success": False,
+                "error": "Challenge ID is required"
+            }
+            
         challenge = self.challenges.get(challenge_id)
 
 
         if not challenge:
-           
-            return 
+            return {
+                "success": False,
+                "error": "Challenge not found"
+            }
         
         if sender != challenge.turn or not challenge.in_progress:
+            return {
+                "success": False,
+                "error": "It's not your turn or the challenge is not in progress"
+            }
+        
+        seeds = challenge.game.board.get_seeds()
+        moves, moves_state = challenge.game.get_valid_moves(challenge.turn,seeds)
+
+        coordinate = next((coord for coord, name in coordinates_houses_map.items() if name == house), None)
+
+        if coordinate is None:
+            return {
+                "success": False,
+                "error": "Invalid house name"
+            }
+        
+        if coordinate not in moves:
+            return {
+                "success": False,
+                "error": "Invalid MOve"
+            }
             
-            return 
+        
+        try:
+            
+            result = challenge.move(house)
 
+            if result['challenge_ended']:
+                self.delete_player_from_active_challenge(challenge)
+                self.add_or_update_player(challenge.winner.name, challenge.winner.address, 100)
+                opponent = challenge.opponent if challenge.winner == challenge.creator else challenge.creator
+                self.add_or_update_player(opponent.name, opponent.address, 2)
 
+            return {
+                "success": True,
+                "message": "Move made successfully",
+                "result": result
+            }
+        
+        except Exception as e:
+            return {
+                "success": False,
+                "error": f"Failed to make move: {str(e)}"
+            }
+        
+        
     def get_next_challenge_id(self):
         self.challenge_next_id += 1
         return self.challenge_next_id
@@ -223,3 +273,39 @@ class Store:
 
         if self.player_challenges.get(challenge.creator) is not None:
             del self.player_challenges[challenge.creator]
+
+    def get_all_challenges(self):
+
+        challenge_keys = self.challenges.keys()
+        challenge_list = []
+
+        for challenge_id in challenge_keys:
+            challenge = self.challenges.get(challenge_id)
+
+            challenge_list.append({
+                "challenge_id": challenge_id,
+                "creator" : challenge.creator,
+                "opponent": challenge.opponet,
+                "in_progress":  challenge.in_progress,
+                "game_ended": challenge.game_ended,
+                "winner": challenge.winner,
+                "state": challenge.game.state.get_board_state()
+            })
+        
+        output = json.dumps({"challenges": challenge_list})
+
+        return output
+    
+
+    def add_or_update_player(self,player_name, eth_address, score_change):
+        """
+        Add a new player or update an existing player's score.
+        
+        :param leaderboard: Leaderboard instance
+        :param player_name: Name of the player
+        :param eth_address: Ethereum address of the player
+        :param score_change: Score to be added
+        """
+        if eth_address not in self.leaderboard.players:
+            self.leaderboard.add_player(player_name, eth_address)
+        self.leaderboard.update_score(eth_address, score_change)

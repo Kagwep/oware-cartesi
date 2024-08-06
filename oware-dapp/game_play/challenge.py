@@ -43,12 +43,14 @@ class Challenge:
         self.player_one_wins = 0
         self.player_two_wins = 0
         self.tiebreak_round = False
+        self.in_progress = False
         
         
     def add_opponent(self,name,address,model_name= None):
         self.opponent = OPlayer(name, address, model_name)
 
     def spawn(self):
+        
 
         random_number = random.randint(1, 6)
 
@@ -69,6 +71,8 @@ class Challenge:
         game_play.game_init(self.player_one,self.player_two,self.turn)
         self.game = game_play
         self.oware_moves = GameplayEvaluationMoves()
+
+        self.in_progress = True
 
     def move(self,selected_house):
 
@@ -130,6 +134,7 @@ class Challenge:
             "current_round": self.current_round,
             "player_one_wins": self.player_one_wins,
             "player_two_wins": self.player_two_wins,
+            "challenge_id": self.id
         }
     
     def load_model_tflite(self,name):
