@@ -29,10 +29,9 @@ class Tournament:
             raise ValueError(f"Invalid number of players. Must be an even number between 4 and 16 inclusive.")
   
 
-    def join_tournament(self,name,address,model_name= None):
+    def join_tournament(self,player):
         if len(self.players) >= self.max_players:
             raise ValueError("The tournament is already full")
-        player = OPlayer(name, address, model_name)
         self.players.append(player)
         if len(self.players) == self.max_players:
             self.start()

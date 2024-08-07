@@ -84,8 +84,28 @@ def create_challenge(payload,sender):
     else:
         add_report(f"Failed to create challenge. Error: {result['error']}")
         return  "reject"
+    
+def create_tournament(payload,sender):
 
+    result = store.create_tournament(sender, payload)
 
+    if result["success"]:
+        add_notice(f"Tournament with id {result['tournament_id']} was was created by {sender} ")
+        return "accept"
+    else:
+        add_report(f"Failed to create challenge. Error: {result['error']}")
+        return  "reject"
+    
+def join_tournament(payload,sender):
+
+    result = store.join_tournament(sender, payload)
+
+    if result["success"]:
+        add_notice(f"tournement with id {result['tournament_id']} was was created by {sender} ")
+        return "accept"
+    else:
+        add_report(f"Failed to create tournament. Error: {result['error']}")
+        return  "reject"
 
 def accept_challenge(payload,sender):
 
@@ -112,6 +132,16 @@ def spawn(payload,sender):
 def make_move(payload,sender):
 
     result = store.make_move(sender, payload)
+
+    if result["success"]:
+        add_notice(f"Move made successfully. Result: {str(result['result'])}")
+        return 'accept'
+    else:
+        add_report(f"Failed to make move. Error: {result['error']}")
+        return  'reject'
+    
+def make_move_tournament(payload,sender):
+    result = store.make_move_tournament(sender, payload)
 
     if result["success"]:
         add_notice(f"Move made successfully. Result: {str(result['result'])}")
