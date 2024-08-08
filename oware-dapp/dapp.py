@@ -141,6 +141,7 @@ def make_move(payload,sender):
         return  'reject'
     
 def make_move_tournament(payload,sender):
+
     result = store.make_move_tournament(sender, payload)
 
     if result["success"]:
@@ -159,6 +160,46 @@ def get_all_challenges():
 
     return "accept"
 
+def get_top_players():
+
+    output = store.get_top_players()
+
+    add_report(output)
+
+    return "accept"
+
+def get_round_fixtures(payload):
+
+    output = store.get_round_fixtures(payload)
+
+    if output["success"]:
+        add_report(output["result"])
+        return "accept"
+    else:
+        add_report(f"Failed to make move. Error: {output['error']}")
+        return  'reject'
+    
+def get_round_fixture(payload):
+
+    output = store.get_round_fixture(payload)
+
+    if output["success"]:
+        add_report(output["result"])
+        return "accept"
+    else:
+        add_report(f"Failed to make move. Error: {output['error']}")
+        return  'reject'
+    
+def get_player_fixture(payload):
+    
+    output = store.get_player_fixture(payload)
+
+    if output["success"]:
+        add_report(output["result"])
+        return "accept"
+    else:
+        add_report(f"Failed to make move. Error: {output['error']}")
+        return  'reject'
 
 
 handlers = {

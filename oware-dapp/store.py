@@ -308,11 +308,18 @@ class Store:
         house = tournament_data.get("house")
 
         tournament_id = tournament_data.get("tournament_id")
+        challenge_id = tournament_data.get("challenge_id")
 
         if not tournament_id:
             return {
                 "success": False,
                 "error": "Tournament ID is required"
+            }
+        
+        if not challenge_id:
+            return {
+                "success": False,
+                "error": "Challenge ID is required"
             }
             
         tournament = self.tournaments.get(tournament_id)
@@ -323,6 +330,8 @@ class Store:
                 "success": False,
                 "error": "Tournament not found"
             }
+        
+        challenge = self.tournaments.challenges.get(challenge_id)
         
         if sender != challenge.turn or not challenge.in_progress:
             return {
@@ -450,3 +459,130 @@ class Store:
         if eth_address not in self.leaderboard.players:
             self.leaderboard.add_player(player_name, eth_address)
         self.leaderboard.update_score(eth_address, score_change)
+
+    def get_top_players(self,request_data):
+
+        N = request_data.get('N')
+
+        top_players = self.leader_board.get_top_players() if N is not None else self.leader_board.get_top_players(N)
+
+        output = json.dumps({"top_players": top_players})
+
+        return output
+    
+    def get_round_fixtures(self,request_data):
+        
+        tournament_id = request_data.get('tournament_id')
+        round_number = request_data.get('round_number')
+        
+
+        # Validate required fields
+        if not all([tournament_id, round_number]):
+            return {
+                "success": False,
+                "error": "Missing required fields:  tournament id or round number"
+            }
+        
+        tournament = self.tournaments.get(tournament_id)
+
+        if not tournament:
+            return {
+                "success": False,
+                "error": "Tournament not found"
+            }
+        
+
+        try:
+            
+            fixtures = tournament.get_round_fixtures(round_number)
+
+            output = json.dumps({"round_fixtures": fixtures})
+
+            return {
+                "success": True,
+                "result": output
+            }
+        
+        except Exception as e:
+            return {
+                "success": False,
+                "error": f"Failed to make move: {str(e)}"
+            }
+
+
+    def get_round_fixture(self,request_data):
+        
+        tournament_id = request_data.get('tournament_id')
+        round_number = request_data.get('round_number')
+        challenge_id = request_data.get('challenge_id')
+        
+
+        # Validate required fields
+        if not all([tournament_id, round_number,challenge_id]):
+            return {
+                "success": False,
+                "error": "Missing required fields:  tournament id or round number or challenge_id"
+            }
+        
+        tournament = self.tournaments.get(tournament_id)
+
+        if not tournament:
+            return {
+                "success": False,
+                "error": "Tournament not found"
+            }
+        
+        try:
+            
+            fixture = tournament.get_fixture(round_number,challenge_id)
+
+            output = json.dumps({"round_fixture": fixture})
+
+            return {
+                "success": True,
+                "result": output
+            }
+        
+        except Exception as e:
+            return {
+                "success": False,
+                "error": f"Failed to make move: {str(e)}"
+            }
+        
+    def get_player_fixture(self, request_data):
+        tournament_id = request_data.get('tournament_id')
+        round_number = request_data.get('round_number')
+        player_address = request_data.get('player_address')
+
+        # Validate required fields
+        if not all([tournament_id, round_number,player_address]):
+            return {
+                "success": False,
+                "error": "Missing required fields:  tournament id or round number or player address"
+            }
+        
+        tournament = self.tournaments.get(tournament_id)
+
+        if not tournament:
+            return {
+                "success": False,
+                "error": "Tournament not found"
+            }
+        
+        try:
+            
+            fixture = tournament.get_player_fixture(round_number,player_address)
+
+            output = json.dumps({"player_fixture": fixture})
+
+            return {
+                "success": True,
+                "result": output
+            }
+        
+        except Exception as e:
+            return {
+                "success": False,
+                "error": f"Failed to make move: {str(e)}"
+            }
+        

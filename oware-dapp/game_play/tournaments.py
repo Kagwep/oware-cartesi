@@ -65,6 +65,8 @@ class Tournament:
 
         if result["challenge_ended"]:
             self.update_tournament_state(challenge_id, result["challenge_winner"])
+        
+        return result
 
     def update_tournament_state(self, challenge_id, winner):
         self.winners.append(winner)
