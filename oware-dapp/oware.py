@@ -4,7 +4,7 @@ import requests
 from utils.utils import HexConverter
 import json
 import copy
-from .store import Store
+from utils.store import Store
 
 hexConverter = HexConverter()
 store = Store()

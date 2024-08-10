@@ -1,7 +1,7 @@
 import numpy as np
 import copy
-from game.constants import NUMBER_OF_HOUSES, PLAYER_ONE_HOUSES , PLAYER_TWO_HOUSES,HOUSES
-from game.move_simulator import MoveSimulator
+from game_play.game.constants import NUMBER_OF_HOUSES, PLAYER_ONE_HOUSES , PLAYER_TWO_HOUSES,HOUSES
+from game_play.game.move_simulator import MoveSimulator
 
 
 class GameplayEvaluationMoves(object):

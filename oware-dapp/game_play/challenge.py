@@ -1,10 +1,10 @@
 import time 
 import random
 from collections import namedtuple
-from game.player import Player
-from game.gameplay import GamePlay
-from game.constants import PLAYER_ONE_HOUSES,PLAYER_TWO_HOUSES
-from game.coordinate_house_map import coordinates_houses_map
+from game_play.game.player import Player
+from game_play.game.gameplay import GamePlay
+from game_play.game.constants import PLAYER_ONE_HOUSES,PLAYER_TWO_HOUSES
+from game_play.game.coordinate_house_map import coordinates_houses_map
 import os
 import sys
 import time
@@ -17,7 +17,8 @@ OPlayer = namedtuple('Player', ['name', 'address', 'model_name'])
 
 class Challenge:
 
-    def __init__(self,creator_name, creator_address,rounds, _id ,creator_model_name = None ) -> None:
+    def __init__(self,creator_name, creator_address,rounds,challenge_type, _id ,creator_model_name = None ) -> None:
+        self.challenge_type = challenge_type
         self.creator = OPlayer(creator_name, creator_address, creator_model_name)
         self.opponent = None
         self.player_one = None
@@ -79,6 +80,11 @@ class Challenge:
         seeds,captured = self.game.make_move(selected_house)
         self.game.state.update_board_state(seeds)
         result = self.game.check_game_outcome_status()
+
+        if self.turn == self.player_two and captured > 0:
+            self.player_two.captured += captured
+        elif self.turn == self.player_one and captured > 0:
+            self.player_one.captured += captured
 
         if result == 1:
             print(f"{self.player_one.name} wins!")
@@ -196,4 +202,24 @@ class Challenge:
 
             selected_house = coordinates_houses_map.get(selected_move)
             
-        return selected_house  
+        return selected_house
+
+    def run_ai_vs_ai_match(self):
+
+        model_one = self.model_player_one
+        model_two = self.model_player_two
+
+        while not self.game_ended:
+
+            model = model_one if self.player_one == self.turn else model_two
+
+            house =  self.select_house(self,model)
+
+            result = self.move(self,house)
+
+        return result
+
+
+
+
+

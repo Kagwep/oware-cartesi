@@ -5,6 +5,8 @@ yarn-error.log
 build/
 dist/
 
+oware-dapp/.sunodo
+
 # Python related
 __pycache__/
 *.py[cod]

@@ -1,4 +1,5 @@
 from game_play.challenge import Challenge
+from game_play.game.constants import CHALLENGE_TYPE_AI_VS_AI, CHALLENGE_TYPE_USER_VS_AI
 from game_play.tournaments import OPlayer, Tournament
 from utils.utils import HexConverter
 from game_play.game.coordinate_house_map import coordinates_houses_map
@@ -17,6 +18,7 @@ class Store:
         self.tournaments = {}
         self.player_tournaments = {}
         self.leader_board = Leaderboard()
+        self.model_addresses = self.load_model_addresses()
 
     def create_challenge(self, creator_address, challenge_data):
 
@@ -30,16 +32,24 @@ class Store:
             challenge_id = self.get_next_challenge_id()
             creator_name = challenge_data.get("creator_name")
             rounds = challenge_data.get("rounds")
+            challenge_type = challenge_data.get("challenge_type")
             creator_model_name = challenge_data.get("model")
 
             # Validate required fields
-            if not all([creator_name, rounds]):
+            if not all([creator_name, rounds, challenge_type]):
                 return {
                     "success": False,
                     "error": "Missing required fields: creator_name or rounds"
                 }
 
-            challenge = Challenge(creator_name, creator_address, rounds, challenge_id, creator_model_name)
+            # Additional validation for AI-related challenges
+            if challenge_type in [CHALLENGE_TYPE_USER_VS_AI, CHALLENGE_TYPE_AI_VS_AI] and not creator_model_name:
+                return {
+                    "success": False,
+                    "error": "Model name is required for AI-related challenges"
+                }
+
+            challenge = Challenge(creator_name, creator_address, rounds,challenge_type, challenge_id, creator_model_name)
             self.challenges[challenge_id] = challenge
             self.player_challenges[creator_address] = challenge_id
 
@@ -90,6 +100,8 @@ class Store:
                 "success": False,
                 "error": str(e) 
             }
+        
+    
 
     def join_challenge(self, player_address, challenge_data):
 
@@ -128,6 +140,62 @@ class Store:
         try:
             challenge.add_opponent(name, player_address, model_name)
             self.player_challenges[player_address] = challenge_id
+
+            return {
+                "success": True,
+                "message": "Successfully joined the challenge",
+                "challenge_id": challenge_id
+            }
+
+        except Exception as e:
+            return {
+                "success": False,
+                "error": f"Failed to join challenge: {str(e)}"
+            }
+    
+    def add_AI_opponent(self,creator_address, challenge_data):
+        
+        challenge_id = challenge_data.get("challenge_id")
+
+        if not challenge_id:
+            return {
+                "success": False,
+                "error": "Challenge ID is required"
+            }
+
+        challenge = self.get_challenge(challenge_id)
+        
+        if not challenge:
+            return {
+                "success": False,
+                "error": "Challenge not found"
+            }
+
+        
+        if creator_address != challenge.creator.address:
+            return {
+            "success": False,
+            "error": "Not Challenge Creator"
+           }
+        
+        model_name = challenge_data.get("model")
+
+        if not model_name:
+            return {
+                "success": False,
+                "error": "Model name is required"
+            }
+        
+        agent_address = self.model_addresses.get(model_name)
+        if not agent_address:
+            return {
+                "success": False,
+                "error": "Invalid model name"
+            }
+
+        try:
+            challenge.add_opponent("Oware_agent", agent_address, model_name)
+            self.player_challenges[agent_address] = challenge_id
 
             return {
                 "success": True,
@@ -586,3 +654,10 @@ class Store:
                 "error": f"Failed to make move: {str(e)}"
             }
         
+    def load_model_addresses(self):
+        """Load model addresses from the JSON file."""
+        try:
+            with open('model_addresses.json', 'r') as f:
+                return json.load(f)
+        except FileNotFoundError:
+            return {}

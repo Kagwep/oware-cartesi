@@ -1,10 +1,5 @@
-group "default" {
-  targets = ["dapp", "server", "console", "machine"]
-}
 
 target "dapp" {
-  # default context is "."
-  # default dockerfile is "Dockerfile"
 }
 
 variable "TAG" {
@@ -16,13 +11,13 @@ variable "DOCKER_ORGANIZATION" {
 }
 
 target "server" {
-  tags = ["${DOCKER_ORGANIZATION}/dapp:oware-dapp-${TAG}-server"]
+  tags = ["${DOCKER_ORGANIZATION}/dapp:oware-${TAG}-server"]
 }
 
 target "console" {
-  tags = ["${DOCKER_ORGANIZATION}/dapp:oware-dapp-${TAG}-console"]
+  tags = ["${DOCKER_ORGANIZATION}/dapp:oware-${TAG}-console"]
 }
 
 target "machine" {
-  tags = ["${DOCKER_ORGANIZATION}/dapp:oware-dapp-${TAG}-machine"]
+  tags = ["${DOCKER_ORGANIZATION}/dapp:oware-${TAG}-machine"]
 }
