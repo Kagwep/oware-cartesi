@@ -1,5 +1,5 @@
 'use client'
-import React, {useState, useEffect} from 'react'
+
 import {
   Box,
   Flex,
@@ -22,42 +22,22 @@ import {
   ChevronDownIcon,
   ChevronRightIcon,
 } from '@chakra-ui/icons'
-import {ethers} from 'ethers'
-import { Radio, RadioGroup } from '@chakra-ui/react';
+import { Link } from 'react-router-dom'
 
-export default function WithSubnavigation({connected,setConnection,signer,setSigner}) {
+export default function WithSubnavigation() {
   const { isOpen, onToggle } = useDisclosure()
-  const [noWallet, SetNoWallet] = useState("")
-  
 
-  useEffect(()=> {
-
-    if (typeof(window.ethereum) === undefined){
-        SetNoWallet(" Please install Metamask to start playing the game")
-    }
-    try  {
-        window.ethereum.request({"method":"eth_requestAccounts"}).then(() => {
-            const provider = new ethers.providers.Web3Provider(window.ethereum);
-            const signer = provider.getSigner()
-            setSigner(signer)
-            setConnection(true)
-        })
-
-    } catch (e){
-        console.log("Connection Failed ", e)
-    }
-},[])
   return (
     <Box>
       <Flex
-        bg={useColorModeValue('white', 'gray.800')}
-        color={useColorModeValue('gray.600', 'white')}
+        bg={useColorModeValue('black', 'purple.800')}
+        color={useColorModeValue('purple.600', 'white')}
         minH={'60px'}
         py={{ base: 2 }}
         px={{ base: 4 }}
         borderBottom={1}
         borderStyle={'solid'}
-        borderColor={useColorModeValue('gray.200', 'gray.900')}
+        borderColor={useColorModeValue('purple.200', 'purple.900')}
         align={'center'}>
         <Flex
           flex={{ base: 1, md: 'auto' }}
@@ -71,18 +51,20 @@ export default function WithSubnavigation({connected,setConnection,signer,setSig
           />
         </Flex>
         <Flex flex={{ base: 1 }} justify={{ base: 'center', md: 'start' }}>
-          <Text
-            textAlign={useBreakpointValue({ base: 'center', md: 'left' })}
-            fontFamily={'heading'}
-            fontSize={'30px'}
-            fontWeight={600}
-            color={useColorModeValue('purple.800', 'white')}>
-            Tic Tac Toe
-          </Text>
+            <Link to={'/'}>
 
-          {/* <Flex display={{ base: 'none', md: 'flex' }} ml={10}>
-         <DesktopNav />
-          </Flex> */}
+                    <Text
+                    textAlign={useBreakpointValue({ base: 'center', md: 'left' })}
+                    fontFamily={'heading'}
+                    fontWeight={'bold'}
+                    color={useColorModeValue('Purple.800', 'white')}>
+                        Oware
+                </Text>
+            </Link>
+
+          <Flex display={{ base: 'none', md: 'flex' }} ml={10}>
+            <DesktopNav />
+          </Flex>
         </Flex>
 
         <Stack
@@ -96,12 +78,12 @@ export default function WithSubnavigation({connected,setConnection,signer,setSig
             fontSize={'sm'}
             fontWeight={600}
             color={'white'}
-            bg={'purple.400'}
+            bg={'purple.700'}
             href={'#'}
             _hover={{
-              bg: 'purple',
+              bg: 'purple.800',
             }}>
-            {connected ? 'Connected' : 'Not Connected'}
+            Connect
           </Button>
         </Stack>
       </Flex>
@@ -114,9 +96,9 @@ export default function WithSubnavigation({connected,setConnection,signer,setSig
 }
 
 const DesktopNav = () => {
-  const linkColor = useColorModeValue('gray.600', 'gray.200')
-  const linkHoverColor = useColorModeValue('gray.800', 'white')
-  const popoverContentBgColor = useColorModeValue('white', 'gray.800')
+  const linkColor = useColorModeValue('purple.600', 'purple.200')
+  const linkHoverColor = useColorModeValue('purple.800', 'white')
+  const popoverContentBgColor = useColorModeValue('white', 'purple.800')
 
   return (
     <Stack direction={'row'} spacing={4}>
@@ -170,7 +152,7 @@ const DesktopSubNav = ({ label, href, subLabel }) => {
       display={'block'}
       p={2}
       rounded={'md'}
-      _hover={{ bg: useColorModeValue('pink.50', 'gray.900') }}>
+      _hover={{ bg: useColorModeValue('pink.50', 'purple.900') }}>
       <Stack direction={'row'} align={'center'}>
         <Box>
           <Text
@@ -198,7 +180,7 @@ const DesktopSubNav = ({ label, href, subLabel }) => {
 
 const MobileNav = () => {
   return (
-    <Stack bg={useColorModeValue('white', 'gray.800')} p={4} display={{ md: 'none' }}>
+    <Stack bg={useColorModeValue('white', 'purple.800')} p={4} display={{ md: 'none' }}>
       {NAV_ITEMS.map((navItem) => (
         <MobileNavItem key={navItem.label} {...navItem} />
       ))}
@@ -220,7 +202,7 @@ const MobileNavItem = ({ label, children, href }) => {
         _hover={{
           textDecoration: 'none',
         }}>
-        <Text fontWeight={600} color={useColorModeValue('gray.600', 'gray.200')}>
+        <Text fontWeight={600} color={useColorModeValue('purple.600', 'purple.200')}>
           {label}
         </Text>
         {children && (
@@ -240,7 +222,7 @@ const MobileNavItem = ({ label, children, href }) => {
           pl={4}
           borderLeft={1}
           borderStyle={'solid'}
-          borderColor={useColorModeValue('gray.200', 'gray.700')}
+          borderColor={useColorModeValue('purple.200', 'purple.700')}
           align={'start'}>
           {children &&
             children.map((child) => (
@@ -255,43 +237,25 @@ const MobileNavItem = ({ label, children, href }) => {
 }
 
 
-const NAV_ITEMS = [
+const NAV_ITEMS= [
   {
-    label: 'Inspiration',
-    children: [
-      {
-        label: 'Explore Design Work',
-        subLabel: 'Trending Design to inspire you',
-        href: '#',
-      },
-      {
-        label: 'New & Noteworthy',
-        subLabel: 'Up-and-coming Designers',
-        href: '#',
-      },
-    ],
+    label: 'Leaderboard',
+    href: '/leaderboard',
   },
   {
-    label: 'Find Work',
-    children: [
-      {
-        label: 'Job Board',
-        subLabel: 'Find your dream design job',
-        href: '#',
-      },
-      {
-        label: 'Freelance Projects',
-        subLabel: 'An exclusive list for contract work',
-        href: '#',
-      },
-    ],
+    label: 'Challenges',
+    href: '/challenges',
   },
   {
-    label: 'Learn Design',
-    href: '#',
+    label: 'Tournaments',
+    href: '/tournaments',
   },
   {
-    label: 'Hire Designers',
-    href: '#',
+    label: 'Profile',
+    href: '/profile',
+  },
+  {
+    label: 'About',
+    href: '/about',
   },
 ]

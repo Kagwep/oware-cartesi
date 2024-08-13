@@ -212,6 +212,9 @@ class Store:
     def start_challenge(self,player_address,challenge_data):
 
         challenge_id = challenge_data.get("challenge_id")
+        challenge_type = challenge_data.get("challenge_type")
+
+        
 
         if not challenge_id:
             return {
@@ -241,7 +244,13 @@ class Store:
             }
         
         try:
-            challenge.spawn()
+
+            if challenge_type in [ CHALLENGE_TYPE_AI_VS_AI]:
+                challenge.spawn()
+                challenge.run_ai_vs_ai_match()
+            else:
+                challenge.spawn()
+            
             return {
                 "success": True,
                 "message": "Challenge started successfully",

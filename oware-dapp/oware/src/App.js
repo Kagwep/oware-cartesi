@@ -1,42 +1,40 @@
-import "./App.css";
+import React, { useState } from 'react';
+import { Routes, Route,useLocation } from 'react-router-dom';
+import WithSubnavigation from './components/common/Navbar';
+import CallToActionWithVideo from './pages/Home';
+import SmallCentered from './components/common/Footer';
+import GamePage from './pages/GamePage';
+import Tournaments from './pages/Tournaments';
+import Challenges from './pages/Challenges';
+import LeaderBoard from './pages/LeaderBoard';
 
-import React, { useState, useEffect } from "react";
-import { Flex, Spacer } from "@chakra-ui/react";
-import { LiaEthernetSolid } from "react-icons/lia";
-import {ethers} from 'ethers'
-import { Radio, RadioGroup,Stack ,Center} from '@chakra-ui/react';
-import CreateChallenge from "./components/CreateChallenge";
-import WithSubnavigation from "./components/Navbar";
-import oware from "./components/oware";
-
-// Simple App to present the Input field and produced Notices
 function App() {
-
-    const [signer,setSigner] = useState(undefined);
-    const [noWallet, SetNoWallet] = useState("")
-    const [connected, setConnection] = useState(false)
-    const [challengeSelected, setChallengeSelected] = useState(false)
-
-
-    
-
+    const [connected, setConnection] = useState(false);
+    const [signer, setSigner] = useState(null);
+    const location = useLocation();
+  
+    const isGamePage = location.pathname === '/play';
+  
     return (
-        <div className="App">
-            <p>{noWallet}</p>
-            <WithSubnavigation connected={connected} setConnection={setConnection} signer={signer} setSigner={setSigner}/>
-            <CreateChallenge signer={signer} />
-            {
-                challengeSelected && connected ? (
-                    <oware />
-                ): (
-                    <Center  h='100px' color='green'>
-                        Select or create challenge to start
-                    </Center>
-                )
-            }
-
-        </div>
+      <div className="App">
+        {!isGamePage && (
+          <WithSubnavigation 
+            connected={connected} 
+            setConnection={setConnection} 
+            signer={signer} 
+            setSigner={setSigner}
+          />
+        )}
+        <Routes>
+          <Route path="/" element={<CallToActionWithVideo />} />
+          <Route path="/play" element={<GamePage />} />
+          <Route path="/tournaments" element={<Tournaments />} />
+          <Route path="/leaderboard" element={<LeaderBoard />} />
+          <Route path="/challenges" element={<Challenges />} />
+        </Routes>
+        {!isGamePage && <SmallCentered />}
+      </div>
     );
-}
-
-export default App;
+  }
+  
+  export default App;
