@@ -160,6 +160,15 @@ def get_all_challenges():
 
     return "accept"
 
+
+def get_all_tournaments():
+
+    output = store.get_all_tournaments()
+
+    add_report(output)
+
+    return "accept"
+
 def get_top_players():
 
     output = store.get_top_players()
@@ -223,7 +232,8 @@ inspect_handler_methods = {
     'get_top_players':get_top_players,
     'get_round_fixtures':get_round_fixtures,
     'get_round_fixture':get_round_fixture,
-    'get_player_fixture':get_player_fixture
+    'get_player_fixture':get_player_fixture,
+    'get_all_tournaments': get_all_tournaments,
 }
 
 finish = {"status": "accept"}
