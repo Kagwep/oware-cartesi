@@ -152,7 +152,7 @@ def make_move_tournament(payload,sender):
         return  'reject'
 
 
-def get_all_challenges():
+def get_all_challenges(payload):
 
     output = store.get_all_challenges()
 
@@ -161,7 +161,7 @@ def get_all_challenges():
     return "accept"
 
 
-def get_all_tournaments():
+def get_all_tournaments(payload):
 
     output = store.get_all_tournaments()
 
@@ -169,7 +169,7 @@ def get_all_tournaments():
 
     return "accept"
 
-def get_top_players():
+def get_top_players(payload):
 
     output = store.get_top_players()
 
