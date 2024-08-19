@@ -24,7 +24,7 @@ def add_notice(data):
 
 
 def add_report(output=""):
-    logger.info("Adding report ", output)
+    logger.info(f"Adding report {output}")
     notice = {"payload":hexConverter.strtohex(output)}
     response = requests.post(rollup_server + "/report", json=notice)
     logger.info(f"Received notice status {response.status_code}")

@@ -512,11 +512,12 @@ class Store:
             challenge_list.append({
                 "challenge_id": challenge_id,
                 "creator" : challenge.creator,
-                "opponent": challenge.opponet,
+                "opponent": challenge.opponent,
                 "in_progress":  challenge.in_progress,
                 "game_ended": challenge.game_ended,
                 "winner": challenge.winner,
-                "state": challenge.game.state.get_board_state()
+                "created_at":challenge.created_at,
+                "state": challenge.game.state.get_board_state() if challenge.game is not None else None
             })
         
         output = json.dumps({"challenges": challenge_list})
