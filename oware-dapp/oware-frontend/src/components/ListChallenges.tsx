@@ -1,9 +1,13 @@
 import React, { useState } from 'react';
 import { Challenge } from '../utils/types';
-import { Box, Text, VStack, HStack, Badge, Heading, useColorModeValue, Button, useToast } from '@chakra-ui/react';
+import { Box, Text, VStack, HStack, Badge, Heading, useColorModeValue, Button, useToast, SimpleGrid, Flex } from '@chakra-ui/react';
 import { CheckCircleIcon, TimeIcon, StarIcon } from '@chakra-ui/icons';
 import JoinChallengeFormModal from './forms/JoinChallengeForm';
 import { useAccount } from 'wagmi';
+import { v4 as uuidv4 } from 'uuid';
+import { sendInput } from '../utils';
+import { useWriteInputBoxAddInput } from "../hooks/generated";
+
 
 interface ListChallengesProps {
   challenges: Challenge[];
@@ -18,7 +22,7 @@ const ListChallenges: React.FC<ListChallengesProps> = ({ challenges, onJoinChall
   const [isOpen, setIsOpen] = useState(false);
   const [selectedChallengeId, setSelectedChallengeId] = useState<string | null>(null);
 
-
+  const {writeContractAsync} = useWriteInputBoxAddInput()
 
   const handleJoinClick = (challengeId: string) => {
     if (!isConnected) {
@@ -35,7 +39,7 @@ const ListChallenges: React.FC<ListChallengesProps> = ({ challenges, onJoinChall
     }
   };
 
-  const handleStartGame = (challengeId: string) => {
+  const handleStartGame = (challengeId: string, challengeType: number) => {
     if (!isConnected) {
       toast({
         title: 'Wallet not connected',
@@ -45,18 +49,103 @@ const ListChallenges: React.FC<ListChallengesProps> = ({ challenges, onJoinChall
         isClosable: true,
       });
     } else {
-      onStartGame(challengeId);
+      onStartGame(challengeId, challengeType);
     }
   };
 
-  const onStartGame = (challengeId: string) => {
+  const onStartGame = async(challengeId: string, challengeType: number) => {
     // Logic to start the game (e.g., API call)
     console.log(`Starting game with challenge ID: ${challengeId}`);
+
+    const dataToSend = {
+      method: "spawn",
+      challenge_id: parseInt(challengeId, 10),
+      challenge_type: challengeType
+    };
+
+    const toastId = uuidv4();
+
+    toast({
+      id: toastId,
+      title: "Starting challenge",
+      description: "Please wait...",
+      status: "info",
+      duration: null,
+      isClosable: true,
+    });
+
+   
+
+
+    try {
+      const result = await sendInput(JSON.stringify(dataToSend), writeContractAsync);
+      if (result.success) {
+
+        toast.update(toastId, {
+          title: "Challenge started",
+          description: "Your challenge started successfully.",
+          status: "success",
+          duration: 5000,
+          isClosable: true,
+        });
+      
+        // Additional success handling (e.g., reset form, close modal, etc.)
+      } else {
+        throw new Error("Failed to start challenge");
+      }
+    } catch (error) {
+      console.error("Error start challenge:", error);
+      toast.update(toastId, {
+        title: "Error",
+        description: "Failed to start challenge. Please try again.",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
+      // Additional error handling if needed
+    }
   };
 
   const isCreator = (creatorAddress: string) => {
     return address && creatorAddress.toLowerCase() === address.toLowerCase();
   };
+
+  const renderMancalaBoard = (state: number[] | null) => {
+    if (!state || state.length !== 12) return <Text>Invalid board state</Text>;
+
+    const renderPit = (seeds: number, index: number) => (
+      <Box
+        key={index}
+        borderWidth="1px"
+        borderRadius="full"
+        width="40px"
+        height="40px"
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
+        bg="gray.700"
+        color="white"
+      >
+        {seeds}
+      </Box>
+    );
+
+    return (
+      <Flex direction="column" width="100%" maxWidth="300px" margin="auto">
+        <Flex justify="space-between">
+          {state.slice(6).reverse().map((seeds, index) => renderPit(seeds, index + 6))}
+        </Flex>
+        <Flex justify="space-between" mt={2}>
+          {state.slice(0, 6).map((seeds, index) => renderPit(seeds, index))}
+        </Flex>
+      </Flex>
+    );
+  };
+
+  
+  function onGoToArena(challenge_id: string): void {
+    throw new Error('Function not implemented.');
+  }
 
   return (
     <VStack spacing={4} align="stretch" w="full" maxW="800px" mx="auto">
@@ -111,15 +200,40 @@ const ListChallenges: React.FC<ListChallengesProps> = ({ challenges, onJoinChall
                 size="sm"
                 color={'white'}
                 leftIcon={<StarIcon />}
-                onClick={() => handleStartGame(challenge.challenge_id)}
+                onClick={() => handleStartGame(challenge.challenge_id, challenge.challenge_type)}
                 mt={2}
                 mb={2}
               >
                 Start Game
               </Button>
             )}
+
+          {challenge.in_progress && (
+            <Button
+             bg="orange.900"
+             size="sm"
+              color={'white'}
+              onClick={() => onGoToArena(challenge.challenge_id)}
+              mt={2}
+              mb={2}
+            >
+              Go to Arena
+            </Button>
+          )}
             <Text mb={2}>Winner: <span className='text-cyan-500'>{challenge.winner || 'N/A'}</span></Text>
-            <Text fontSize="sm" color="gray.500">Board State: {challenge.state || 'Not available'}</Text>
+
+            {
+              challenge.state ? (
+                <>
+                  {renderMancalaBoard(challenge.state)}
+                </>
+              ) : (
+                 <Text fontSize="sm" color="gray.500">Board State: {challenge.state || 'Not available'}</Text>
+              )
+            }
+            <Text fontSize="sm" color="gray.500" mt={2}>
+              Created at: {new Date(challenge.created_at * 1000).toLocaleString()}
+            </Text>
             <JoinChallengeFormModal 
               isOpen={isOpen && selectedChallengeId === challenge.challenge_id} 
               onClose={() => setIsOpen(false)} 

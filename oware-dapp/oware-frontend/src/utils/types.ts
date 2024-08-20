@@ -5,7 +5,9 @@ export interface Challenge {
     in_progress:boolean,
     game_ended: boolean,
     winner: string,
-    state: string
+    created_at:number,
+    challenge_type: number,
+    state: number[]
 }
 
 export interface Player {

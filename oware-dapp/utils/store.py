@@ -517,7 +517,8 @@ class Store:
                 "game_ended": challenge.game_ended,
                 "winner": challenge.winner,
                 "created_at":challenge.created_at,
-                "state": challenge.game.state.get_board_state() if challenge.game is not None else None
+                "challenge_type":challenge.challenge_type,
+                "state": challenge.game.board.get_seeds() if challenge.game is not None else None
             })
         
         output = json.dumps({"challenges": challenge_list})

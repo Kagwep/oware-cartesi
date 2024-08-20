@@ -26,7 +26,7 @@ class Challenge:
         self.game = None
         self.id = _id
         self.winner = None
-        self.created_at = time.time
+        self.created_at = time.time()
         self.game_ended = False
         self.turn = None
         self.model_player_one=  None
