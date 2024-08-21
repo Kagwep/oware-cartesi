@@ -1,10 +1,11 @@
 import React from 'react'
 import OwareGame from '../components/game/Oware'
+import { Challenge } from '../utils/types'
 
-const GamePage = ({chalengeInfo}:{chalengeInfo:any}) => {
+const Arena = ({chalengeInfo}:{chalengeInfo: Challenge}) => {
   return (
     <OwareGame challengeInfo={chalengeInfo} />
   )
 }
 
-export default GamePage
+export default Arena

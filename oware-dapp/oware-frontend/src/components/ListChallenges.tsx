@@ -7,6 +7,7 @@ import { useAccount } from 'wagmi';
 import { v4 as uuidv4 } from 'uuid';
 import { sendInput } from '../utils';
 import { useWriteInputBoxAddInput } from "../hooks/generated";
+import Arena from '../pages/Arena';
 
 
 interface ListChallengesProps {
@@ -21,6 +22,7 @@ const ListChallenges: React.FC<ListChallengesProps> = ({ challenges, onJoinChall
   const toast = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [selectedChallengeId, setSelectedChallengeId] = useState<string | null>(null);
+  const [selectedChallenge, setSelectedChallenge] = useState<Challenge | null>(null);
 
   const {writeContractAsync} = useWriteInputBoxAddInput()
 
@@ -143,8 +145,13 @@ const ListChallenges: React.FC<ListChallengesProps> = ({ challenges, onJoinChall
   };
 
   
-  function onGoToArena(challenge_id: string): void {
-    throw new Error('Function not implemented.');
+
+  const handleGoToArena = (challenge: Challenge) => {
+    setSelectedChallenge(challenge);
+  };
+
+  if (selectedChallenge) {
+    return <Arena chalengeInfo={selectedChallenge} />;
   }
 
   return (
@@ -213,7 +220,7 @@ const ListChallenges: React.FC<ListChallengesProps> = ({ challenges, onJoinChall
              bg="orange.900"
              size="sm"
               color={'white'}
-              onClick={() => onGoToArena(challenge.challenge_id)}
+              onClick={() => handleGoToArena(challenge)}
               mt={2}
               mb={2}
             >

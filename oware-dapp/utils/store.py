@@ -518,6 +518,8 @@ class Store:
                 "winner": challenge.winner,
                 "created_at":challenge.created_at,
                 "challenge_type":challenge.challenge_type,
+                "rounds": challenge.rounds,
+                "current_round":challenge.current_round,
                 "state": challenge.game.board.get_seeds() if challenge.game is not None else None
             })
         

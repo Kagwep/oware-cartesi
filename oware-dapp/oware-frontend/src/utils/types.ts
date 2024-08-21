@@ -5,6 +5,8 @@ export interface Challenge {
     in_progress:boolean,
     game_ended: boolean,
     winner: string,
+    rounds:number,
+    current_round:number
     created_at:number,
     challenge_type: number,
     state: number[]

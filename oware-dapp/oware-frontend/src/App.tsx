@@ -24,7 +24,6 @@ function App() {
         <main className="main-content">
           <Routes>
             <Route path="/" element={<CallToActionWithVideo />} />
-            <Route path="/play" element={<GamePage />} />
             <Route path="/tournaments" element={<Tournaments />} />
             <Route path="/leaderboard" element={<LeaderBoard />} />
             <Route path="/challenges" element={<Challenges />} />
