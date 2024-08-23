@@ -17,7 +17,7 @@ logger.info(f"HTTP rollup_server url is {rollup_server}")
 
 def add_notice(data):
     logger.info(f"Received advance request data {data}")
-    logger.info("Adding notice {data}")
+    logger.info(f"Adding notice {data}")
     notice = {"payload": hexConverter.strtohex(data)}
     response = requests.post(rollup_server + "/notice", json=notice)
     logger.info(f"Received notice status {response.status_code} body {response.content}")

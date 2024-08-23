@@ -218,6 +218,9 @@ class Challenge:
             result = self.move(self,house)
 
         return result
+    
+    
+
 
 
 

@@ -25,13 +25,19 @@ import {
   PhysicsAggregate,
   PhysicsShapeType,
   VertexBuffer,
-  DynamicTexture
+  DynamicTexture,
+  CannonJSPlugin,
+  Tools,
+  CreateTextShapePaths
 } from "@babylonjs/core"
 import { AdvancedDynamicTexture, Control, StackPanel, TextBlock } from '@babylonjs/gui/2D';
 import "@babylonjs/loaders/glTF";
 import { Challenge } from '../../utils/types';
 import * as CANNON from 'cannon';
 import HavokPhysics from '@babylonjs/havok';
+import { formattedAddressCheck } from '../../utils';
+
+import { useAccount } from 'wagmi';
 
 BabylonFileLoaderConfiguration.LoaderInjectedPhysicsEngine = CANNON ;
 window.CANNON = CANNON;
@@ -78,35 +84,23 @@ const OwareGame = ({ challengeInfo }: {challengeInfo: Challenge}) => {
       const highlightedHouseRef = useRef<number | null>(null);
       const originalMaterialRef = useRef<StandardMaterial | null>(null);
 
+      const { address } = useAccount();
+
     useEffect(() => {
         if (canvasRef.current) {
             const engine = new Engine(canvasRef.current, true);
             const scene = new Scene(engine);
 
-            const gethavok = () => {
-                return HavokPhysics().then((havokPlugin) => {
-                    // You can use the havokPlugin here or return it
-                    return havokPlugin;
-                });
-            }
+      
             
             sceneRef.current = scene;
 
             scene.collisionsEnabled = true;
 
-            scene.gravity.y = 0;
-
-            gethavok().then((havokPlugin) => {
-                const physicsPlugin = new HavokPlugin(true, havokPlugin);
-                scene.enablePhysics(undefined, physicsPlugin);
-               const physicsViewer = new PhysicsViewer();
-            }).catch((error) => {
-                console.error("Error loading Havok Physics:", error);
-            });
-
-
-      
-   
+            const gravityVector = new Vector3(0, -9.81, 0);
+            const physicsPlugin = new CannonJSPlugin();
+            scene.enablePhysics(gravityVector, physicsPlugin);
+            
             // Camera setup
             const camera = new ArcRotateCamera("camera", -Math.PI / 2, Math.PI / 3, 15, Vector3.Zero(), scene);
             camera.attachControl(canvasRef.current, true);
@@ -120,7 +114,17 @@ const OwareGame = ({ challengeInfo }: {challengeInfo: Challenge}) => {
 
             // Limit camera rotation around the vertical axis
             camera.lowerAlphaLimit = Math.PI ;
-            camera.upperAlphaLimit = -Math.PI / 2; // rotate according to player
+            camera.upperAlphaLimit = -Math.PI / 2;
+
+            console.log(address)
+
+            // if( address && formattedAddressCheck(challengeInfo.creator[1], address)){
+                 
+            // }else{
+            //     camera.upperAlphaLimit = -Math.PI / 2;
+            // }
+            
+            // rotate according to player
 
             // Disable panning
             camera.panningSensibility = 0;
@@ -130,12 +134,13 @@ const OwareGame = ({ challengeInfo }: {challengeInfo: Challenge}) => {
 
            light.intensity = 0.7
 
+        //    const check_player = toInvert()
+
+        //    const model_name = check_player ? 'board' : 'board_one'
+
          
-
-
-
             // Load the GLB model (game board)
-            SceneLoader.ImportMeshAsync("", "assets/", "board.glb", scene).then((result) => {
+            SceneLoader.ImportMeshAsync("", "assets/", `board.glb`, scene).then((result) => {
                 const board = result.meshes[0];
                 board.position = new Vector3(0, 0, 0);
                 board.checkCollisions = true;
@@ -168,16 +173,16 @@ const OwareGame = ({ challengeInfo }: {challengeInfo: Challenge}) => {
                     } else if (mesh.name.match(/^House\d+$/)) {
                         // Create a new StandardMaterial for the board
                         const boardMaterial = new StandardMaterial("boardMaterial", scene);
-
                         // Set the diffuse color to deep blue
                         boardMaterial.diffuseColor = new Color3(0.2, 0, 0.4); // Very deep purple color
                         
-
                         // Apply the material to the board mesh
                         mesh.material = boardMaterial;
                                                     // If the above doesn't work, try coloring vertices directly
+                        mesh.physicsImpostor = new PhysicsImpostor(mesh, PhysicsImpostor.MeshImpostor, { mass: 0, restitution: 0.1 }, scene);
 
                         gameMeshesRef.current.houses.push(mesh);
+                        
                     } else if (mesh.name.match(/^House\d+D$/)) {
                         
                         mesh.isPickable = false
@@ -185,11 +190,20 @@ const OwareGame = ({ challengeInfo }: {challengeInfo: Challenge}) => {
                     } else if (mesh.name === "player1" || mesh.name === "player2") {
                         mesh.isPickable = false
                         gameMeshesRef.current.playerNames[mesh.name] = mesh;
-                        if(mesh.name === "player1"){
-                            updateNameDisplay(mesh, challengeInfo.creator[0])
-                        }else if(mesh.name === "player2"){
-                            updateNameDisplay(mesh, challengeInfo.opponent[0])
+
+                        const isCreator = address && typeof address === 'string' && formattedAddressCheck(challengeInfo.creator[1], address);
+                        const creatorName = challengeInfo.creator[0];
+                        const opponentName = challengeInfo.opponent[0];
+                    
+                        if (mesh.name === "player1") {
+                            updateNameDisplay(mesh, isCreator ? opponentName : creatorName);
+                        } else if (mesh.name === "player2") {
+                            updateNameDisplay(mesh, isCreator ? creatorName : opponentName);
+                        } else {
+                            console.warn(`Unexpected mesh name: ${mesh.name}`);
                         }
+
+
                     } else if (mesh.name === "display1" || mesh.name === "display2") {
                         mesh.isPickable = false
                         gameMeshesRef.current.playerTurnDisplays[mesh.name] = mesh;
@@ -200,13 +214,16 @@ const OwareGame = ({ challengeInfo }: {challengeInfo: Challenge}) => {
                         // Set the diffuse color to deep blue
                         boardMaterial.diffuseColor = new Color3(0.2, 0, 0.4); // Very deep purple color
                         
-
                         // Apply the material to the board mesh
                         mesh.material = boardMaterial;
                                                     // If the above doesn't work, try coloring vertices directly
-                        
                         mesh.isPickable = false
+
+
+
+
                         gameMeshesRef.current.capturedHouses[mesh.name] = mesh;
+
                     } else if (mesh.name === "Home1" || mesh.name === "Home2") {
                         mesh.isPickable = false
                         gameMeshesRef.current.capturedDisplays[mesh.name.toLowerCase() as keyof typeof gameMeshesRef.current.capturedDisplays] = mesh;
@@ -233,6 +250,10 @@ const OwareGame = ({ challengeInfo }: {challengeInfo: Challenge}) => {
 
                 // Set up house picking
                 setupHousePicking();
+
+                updatePlayerTurnDisplays(gameMeshesRef.current.playerTurnDisplays)
+
+
 
                 // Create an invisible sphere around the board to prevent camera from going through
                 const boundingSphere = MeshBuilder.CreateSphere("boundingSphere", {diameter: 30}, scene);
@@ -331,6 +352,7 @@ const OwareGame = ({ challengeInfo }: {challengeInfo: Challenge}) => {
         state.forEach((seedCount, index) => {
             const house = gameMeshesRef.current.houses[index] as Mesh;
             const houseDisplay = gameMeshesRef.current.houseDisplays[index];
+            
     
             if (!house.getBoundingInfo) {
                 console.error(`House ${index + 1} does not have bounding info.`);
@@ -415,6 +437,8 @@ const OwareGame = ({ challengeInfo }: {challengeInfo: Challenge}) => {
                     seed.material = seedMaterial;
                     
                     seed.position = validPosition;
+
+                    seed.physicsImpostor = new PhysicsImpostor(seed, PhysicsImpostor.MeshImpostor, { mass: 0, restitution: 0.1 }, sceneRef.current);
     
                     // Add physics impostor to the seed
                    // addPhysicsAggregate(seed)
@@ -439,6 +463,7 @@ const OwareGame = ({ challengeInfo }: {challengeInfo: Challenge}) => {
         const material = new StandardMaterial("clockMaterial", sceneRef.current);
         material.diffuseTexture = texture;
         displayMesh.material = material;
+        
     
         const ctx = texture.getContext();
         ctx.clearRect(0, 0, 512, 256);
@@ -455,11 +480,40 @@ const OwareGame = ({ challengeInfo }: {challengeInfo: Challenge}) => {
         // Calculate positions to center the text
         const xPosition = (512 - textWidth) / 2;
         const yPosition = 256 / 2 + 200 / 3; // Approximate vertical centering
+        
+    
     
         // Draw text
         texture.drawText(seedsNumberString, xPosition, yPosition, "bold 220px Arial", "blue", "transparent");
         texture.update();
     };
+
+    const updatePlayerTurnDisplays = (playerTurnDisplays: any ) => {
+
+        if (!sceneRef.current) return;
+        
+        const display1 = playerTurnDisplays.display1
+        const display2 = playerTurnDisplays.display2
+
+                // Create Babylon.js materials
+        const redMaterial = new StandardMaterial("redMaterial", sceneRef.current);
+        redMaterial.diffuseColor = new Color3(1, 0, 0); // Red
+
+        const greenMaterial = new StandardMaterial("greenMaterial", sceneRef.current);
+        greenMaterial.diffuseColor = new Color3(0, 1, 0); // Green
+
+
+        const isCreator = address && formattedAddressCheck(challengeInfo.creator[1], address);
+
+        if(isCreator){
+            display2.material = greenMaterial;
+            display1.material = redMaterial;
+        }else{
+            display1.material = greenMaterial;
+            display2.material = redMaterial;
+        }
+
+    }
 
     const updateNameDisplay = (displayMesh: AbstractMesh, name: string) => {
         const texture = new DynamicTexture(`t-${displayMesh.name}`, {width:512, height:256}, sceneRef.current);
@@ -467,23 +521,35 @@ const OwareGame = ({ challengeInfo }: {challengeInfo: Challenge}) => {
         material.diffuseTexture = texture;
         displayMesh.material = material;
     
+        
+    
         const ctx = texture.getContext();
         ctx.clearRect(0, 0, 512, 256);
     
         // Set font
         const fontSize = 80;
         ctx.font = `bold ${fontSize}px Arial`;
+
+      //  ctx.setTransform(-1, 0, 1, 1, 0, -128);
         
         // Calculate vertical position (center vertically)
         const yPosition = 256 / 2 + fontSize / 3; // Approximate vertical centering
     
         // Set a small left margin
         const xPosition = 10; // 10 pixels from the left edge
-    
+
+       // texture.uScale = 2;
+
         // Draw text
         texture.drawText(name, xPosition, yPosition, `bold ${fontSize}px Arial`, "green", "transparent");
         texture.update();
     }
+
+    const toInvert = (): boolean => {
+        if (!address) return false
+        return formattedAddressCheck(challengeInfo.creator[1], address)
+    } 
+
 
     const setupHousePicking = () => {
         if (!sceneRef.current) return;

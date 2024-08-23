@@ -520,6 +520,9 @@ class Store:
                 "challenge_type":challenge.challenge_type,
                 "rounds": challenge.rounds,
                 "current_round":challenge.current_round,
+                "player_turn":challenge.turn.get_player() if challenge.turn is not None else None,
+                "player_one_captured":challenge.player_one.get_player() if challenge.player_one is not None else None,
+                "player_two_captured":challenge.player_two.get_player() if challenge.player_two is not None else None,
                 "state": challenge.game.board.get_seeds() if challenge.game is not None else None
             })
         

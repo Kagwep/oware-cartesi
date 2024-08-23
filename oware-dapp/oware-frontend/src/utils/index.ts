@@ -35,3 +35,7 @@ export const sendInput = async (inputValue: string, writeContractAsync: Function
 export const shortenAddress = (address: string) => {
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
   };
+
+  export const formattedAddressCheck = (playerAddress: string, address:string) => {
+    return !!(address && playerAddress.toLowerCase() === address.toLowerCase())
+  };
