@@ -56,13 +56,13 @@ class Challenge:
         random_number = random.randint(1, 6)
 
         if random_number > 3:
-            self.player_one = Player(self.creator.name,PLAYER_ONE_HOUSES,0)
-            self.player_two = Player(self.opponent.name,PLAYER_TWO_HOUSES,0)
+            self.player_one = Player(self.creator.name,PLAYER_ONE_HOUSES,0,self.creator.address)
+            self.player_two = Player(self.opponent.name,PLAYER_TWO_HOUSES,0,self.opponent.address)
             self.model_player_one = self.load_model_tflite(self.creator.model_name) if self.creator.model_name  else None
             self.model_player_two = self.load_model_tflite(self.opponent.model_name) if self.creator.model_name  else None
         else:
-            self.player_one = Player(self.opponent.name,PLAYER_TWO_HOUSES,0)
-            self.player_two =  Player(self.creator.name,PLAYER_ONE_HOUSES,0)
+            self.player_one = Player(self.opponent.name,PLAYER_TWO_HOUSES,0,self.opponent.address)
+            self.player_two =  Player(self.creator.name,PLAYER_ONE_HOUSES,0,self.creator.address)
             self.model_player_two = self.load_model_tflite(self.creator.model_name) if self.creator.model_name  else None
             self.model_player_one = self.load_model_tflite(self.opponent.model_name) if self.creator.model_name  else None
 

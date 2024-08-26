@@ -90,11 +90,8 @@ const OwareGame = ({ challengeInfo }: {challengeInfo: Challenge}) => {
         if (canvasRef.current) {
             const engine = new Engine(canvasRef.current, true);
             const scene = new Scene(engine);
-
-      
             
             sceneRef.current = scene;
-
             scene.collisionsEnabled = true;
 
             const gravityVector = new Vector3(0, -9.81, 0);
@@ -226,7 +223,23 @@ const OwareGame = ({ challengeInfo }: {challengeInfo: Challenge}) => {
 
                     } else if (mesh.name === "Home1" || mesh.name === "Home2") {
                         mesh.isPickable = false
+                        
+                        const isCreator = address && typeof address === 'string' && formattedAddressCheck(challengeInfo.creator[1], address);
+
+                        console.log()
+
+                    
+                        if (mesh.name === "Home1" && challengeInfo.player_one_captured) {
+                            updateHouseCapturedDisplay(mesh, isCreator ? challengeInfo.player_two_captured.captured.toString() : challengeInfo.player_one_captured.captured.toString());
+                        } else if (mesh.name === "Home2" &&  challengeInfo.player_one_captured) {
+                            updateHouseCapturedDisplay(mesh, isCreator ? challengeInfo.player_one_captured.captured.toString() : challengeInfo.player_two_captured.captured.toString());
+                        } else {
+                            console.warn(`Unexpected mesh name: ${mesh.name}`);
+                        }
+
                         gameMeshesRef.current.capturedDisplays[mesh.name.toLowerCase() as keyof typeof gameMeshesRef.current.capturedDisplays] = mesh;
+
+
                     } else {
                         // Store any other meshes with their names as keys
                         gameMeshesRef.current[mesh.name] = mesh;
@@ -267,41 +280,65 @@ const OwareGame = ({ challengeInfo }: {challengeInfo: Challenge}) => {
                 camera.setTarget(boundingSphere);
             });
 
+                        // Define challenge types
+            const challengeTypes = [
+                { label: 'User vs User', value: 1 },
+                { label: 'User vs AI', value: 2 },
+                { label: 'AI vs AI', value: 3 },
+            ];
+            
+            // Function to get challenge type label
+            const getChallengeTypeLabel = (value: number): string => {
+                const challengeType = challengeTypes.find(type => type.value === value);
+                return challengeType ? challengeType.label : 'Unknown';
+            };
+
+            
             // Create GUI
             const advancedTexture = AdvancedDynamicTexture.CreateFullscreenUI("UI");
 
             // Challenge Info Panel
             const panel = new StackPanel();
-            panel.width = "300px";
+            panel.width = "200px";
             panel.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_LEFT;
             panel.verticalAlignment = Control.VERTICAL_ALIGNMENT_TOP;
             advancedTexture.addControl(panel);
 
-            const addInfoText = (text: string) => {
+            const addInfoText = (text: string, emoji: string) => {
                 const textBlock = new TextBlock();
-                textBlock.text = text;
+                textBlock.text = `${emoji} ${text}`;
                 textBlock.color = "white";
-                textBlock.height = "40px";
+                textBlock.fontSize = 14;
+                textBlock.height = "30px";
                 panel.addControl(textBlock);
             };
 
             // Add challenge info to the panel
-            addInfoText(`Challenge ID: ${challengeInfo.challenge_id}`);
-            addInfoText(`Creator: ${challengeInfo.creator[0]}`);
-            addInfoText(`Rounds: ${challengeInfo.rounds}`);
-            addInfoText(`Type: ${challengeInfo.challenge_type}`);
-            addInfoText(`Current Round: ${challengeInfo.current_round}`);
+            addInfoText(`${challengeInfo.challenge_id}`, "Challenge 🆔: ");
+            addInfoText(`${challengeInfo.creator[0]}`, "Creator 👤: ");
+            addInfoText(`${challengeInfo.rounds}`, "Rounds 🔄: ");
+            addInfoText(`${getChallengeTypeLabel(challengeInfo.challenge_type)}`, "C Type 🏆: ");
+            addInfoText(`${challengeInfo.current_round}`, "Round📍: ");
 
             // Player Info
             const playerInfoPanel = new StackPanel();
-            playerInfoPanel.width = "300px";
+            playerInfoPanel.width = "200px";
             playerInfoPanel.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_RIGHT;
             playerInfoPanel.verticalAlignment = Control.VERTICAL_ALIGNMENT_TOP;
             advancedTexture.addControl(playerInfoPanel);
 
-            addInfoText.call(playerInfoPanel, `Player 1: ${challengeInfo.creator[0] ? challengeInfo.creator[0] : 'Waiting...'}`);
-            addInfoText.call(playerInfoPanel, `Player 2: ${challengeInfo.opponent[0] ? challengeInfo.opponent[0] : 'Waiting...'}`);
-            addInfoText.call(playerInfoPanel, `Status: ${challengeInfo.in_progress ? "Game in Progress" : "Waiting for Players"}`);
+            const addPlayerInfoText = (text: string, emoji: string) => {
+                const textBlock = new TextBlock();
+                textBlock.text = `${emoji} ${text}`;
+                textBlock.color = "white";
+                textBlock.fontSize = 14;
+                textBlock.height = "30px";
+                playerInfoPanel.addControl(textBlock);
+            };
+
+            addPlayerInfoText(`Player 1: ${challengeInfo.creator[0] ? challengeInfo.creator[0] : 'Waiting...'}`, "🎮");
+            addPlayerInfoText(`Player 2: ${challengeInfo.opponent[0] ? challengeInfo.opponent[0] : 'Waiting...'}`, "🎮");
+            addPlayerInfoText(`Status: ${challengeInfo.in_progress ? "Game in Progress" : "Waiting for Players"}`, "🚦");
 
             engine.runRenderLoop(() => {
                 scene.render();
@@ -503,14 +540,16 @@ const OwareGame = ({ challengeInfo }: {challengeInfo: Challenge}) => {
         greenMaterial.diffuseColor = new Color3(0, 1, 0); // Green
 
 
-        const isCreator = address && formattedAddressCheck(challengeInfo.creator[1], address);
+        const isScreenOwner = address && formattedAddressCheck(challengeInfo.player_turn.address, address);
 
-        if(isCreator){
+        if(isScreenOwner ){
+            console.log("ex")
             display2.material = greenMaterial;
             display1.material = redMaterial;
-        }else{
-            display1.material = greenMaterial;
+        }
+        else{
             display2.material = redMaterial;
+            display1.material = greenMaterial;
         }
 
     }
@@ -543,6 +582,36 @@ const OwareGame = ({ challengeInfo }: {challengeInfo: Challenge}) => {
         // Draw text
         texture.drawText(name, xPosition, yPosition, `bold ${fontSize}px Arial`, "green", "transparent");
         texture.update();
+    }
+
+    const updateHouseCapturedDisplay = (displayMesh: AbstractMesh, captured: string) => {
+        const texture = new DynamicTexture(`t-${displayMesh.name}`, {width:512, height:256}, sceneRef.current);
+        const material = new StandardMaterial("clockMaterial1", sceneRef.current);
+        material.diffuseTexture = texture;
+        displayMesh.material = material;
+        
+    
+        const ctx = texture.getContext();
+        ctx.clearRect(0, 0, 512, 256);
+    
+        const seedsNumberString = captured;
+        
+        // Set font before measuring text
+        ctx.font = "bold 200px Arial";
+        
+        // Measure text width
+        const textMetrics = ctx.measureText(seedsNumberString);
+        const textWidth = textMetrics.width;
+        
+        // Calculate positions to center the text
+        const xPosition = (512 - textWidth) / 2;
+        const yPosition = 256 / 2 + 200 / 3; // Approximate vertical centering
+        
+    
+    
+        // Draw text
+        texture.drawText(seedsNumberString, xPosition, yPosition, "bold 220px Arial", "green", "transparent");
+        texture.update()
     }
 
     const toInvert = (): boolean => {

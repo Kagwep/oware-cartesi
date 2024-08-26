@@ -1,15 +1,17 @@
 class Player:
 
-    def __init__(self, name, houses, captured) -> None:
+    def __init__(self, name, houses, captured,address) -> None:
         self.name  = name
         self.houses =  houses
         self.captured = captured
+        self.player_address = address
 
     def get_player(self):
         player = {
             "name":self.name,
             "houses":self.houses,
-            "captured":self.captured
+            "captured":self.captured,
+            "address":self.player_address
         }
 
         return player

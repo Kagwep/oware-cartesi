@@ -9,7 +9,11 @@ export interface Challenge {
     current_round:number
     created_at:number,
     challenge_type: number,
-    state: number[]
+    state: number[],
+    player_one_captured: PlayerTwo,
+    player_two_captured: PlayerTwo
+    player_turn:PlayerTwo,
+
 }
 
 export interface Player {
@@ -17,4 +21,12 @@ export interface Player {
     eth_address:string
     score:number
     rank_title:string
+}
+
+
+export interface PlayerTwo {
+    name:string,
+    houses: number[],
+    captured: number,
+    address:string,
 }

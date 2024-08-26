@@ -243,8 +243,8 @@ start_time = time.time()
 while(game_counter <= no_of_games ):
      games_player_one = 1000
      model_player_one = load_model(games_player_one)
-     player_one = Player('opponent',PLAYER_ONE_HOUSES,0)
-     player_two = Player('agent',PLAYER_TWO_HOUSES,0)
+     player_one = Player('opponent',PLAYER_ONE_HOUSES,0,'0x000')
+     player_two = Player('agent',PLAYER_TWO_HOUSES,0,'0x001')
      oware_results = oware_cartesi(player_one,player_two)
 
      if oware_results is not None:
