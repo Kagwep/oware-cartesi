@@ -334,7 +334,7 @@ class Store:
                 "error": "Challenge not found"
             }
         
-        if sender != challenge.turn or not challenge.in_progress:
+        if sender != challenge.turn.address or not challenge.in_progress:
             return {
                 "success": False,
                 "error": "It's not your turn or the challenge is not in progress"
@@ -410,7 +410,7 @@ class Store:
         
         challenge = self.tournaments.challenges.get(challenge_id)
         
-        if sender != challenge.turn or not challenge.in_progress:
+        if sender != challenge.turn.address or not challenge.in_progress:
             return {
                 "success": False,
                 "error": "It's not your turn or the challenge is not in progress"

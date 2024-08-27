@@ -8,7 +8,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { sendInput } from '../utils';
 import { useWriteInputBoxAddInput } from "../hooks/generated";
 import Arena from '../pages/Arena';
-
+import { fetchGraphQLData } from '../utils/api';
+import { NOTICES_QUERY } from '../utils/query';
 
 interface ListChallengesProps {
   challenges: Challenge[];
@@ -90,6 +91,10 @@ const ListChallenges: React.FC<ListChallengesProps> = ({ challenges, onJoinChall
           duration: 5000,
           isClosable: true,
         });
+
+      const response_data = await fetchGraphQLData(NOTICES_QUERY);
+
+      console.log("----->",response_data)
       
         // Additional success handling (e.g., reset form, close modal, etc.)
       } else {

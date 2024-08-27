@@ -35,9 +35,14 @@ import "@babylonjs/loaders/glTF";
 import { Challenge } from '../../utils/types';
 import * as CANNON from 'cannon';
 import HavokPhysics from '@babylonjs/havok';
-import { formattedAddressCheck } from '../../utils';
-
+import { formattedAddressCheck, sendInput } from '../../utils';
+import { v4 as uuidv4 } from 'uuid';
 import { useAccount } from 'wagmi';
+import { useToast } from '@chakra-ui/react';
+import { useWriteInputBoxAddInput } from "../../hooks/generated";
+import { fetchGraphQLData } from '../../utils/api';
+import { NOTICES_QUERY } from '../../utils/query';
+import { hexToString } from 'viem';
 
 BabylonFileLoaderConfiguration.LoaderInjectedPhysicsEngine = CANNON ;
 window.CANNON = CANNON;
@@ -70,6 +75,10 @@ const OwareGame = ({ challengeInfo }: {challengeInfo: Challenge}) => {
 
     const canvasRef = useRef(null);
 
+    const toast = useToast();
+
+    const {writeContractAsync} = useWriteInputBoxAddInput();
+
     const gameMeshesRef = useRef<GameMeshes>({
         board: null,
         houses: [],
@@ -83,6 +92,7 @@ const OwareGame = ({ challengeInfo }: {challengeInfo: Challenge}) => {
       const sceneRef = useRef<Scene | undefined>(undefined);
       const highlightedHouseRef = useRef<number | null>(null);
       const originalMaterialRef = useRef<StandardMaterial | null>(null);
+      const gameInfoPanelRef = useRef<StackPanel| null>(null);
 
       const { address } = useAccount();
 
@@ -339,6 +349,25 @@ const OwareGame = ({ challengeInfo }: {challengeInfo: Challenge}) => {
             addPlayerInfoText(`Player 1: ${challengeInfo.creator[0] ? challengeInfo.creator[0] : 'Waiting...'}`, "🎮");
             addPlayerInfoText(`Player 2: ${challengeInfo.opponent[0] ? challengeInfo.opponent[0] : 'Waiting...'}`, "🎮");
             addPlayerInfoText(`Status: ${challengeInfo.in_progress ? "Game in Progress" : "Waiting for Players"}`, "🚦");
+
+            // Game Info
+            const gameInfoPanel = new StackPanel();
+            gameInfoPanel.width = "100%";
+            gameInfoPanel.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_CENTER;
+            gameInfoPanel.verticalAlignment = Control.VERTICAL_ALIGNMENT_BOTTOM;
+            advancedTexture.addControl(gameInfoPanel);
+
+            gameInfoPanelRef.current = gameInfoPanel;
+
+            async function updateLogsFromFetch() {
+                const notices = await fetchAndProcessNotices();
+                if (gameInfoPanelRef.current) {
+                  prepareLogs(notices, gameInfoPanelRef.current);
+                }
+              }
+
+            updateLogsFromFetch()
+
 
             engine.runRenderLoop(() => {
                 scene.render();
@@ -623,15 +652,39 @@ const OwareGame = ({ challengeInfo }: {challengeInfo: Challenge}) => {
     const setupHousePicking = () => {
         if (!sceneRef.current) return;
 
+        const isScreenOwner = address && formattedAddressCheck(challengeInfo.player_turn.address, address);
+
+
         gameMeshesRef.current.houses.forEach((house, index) => {
             house.actionManager = new ActionManager(sceneRef.current);
             house.actionManager.registerAction(
                 new ExecuteCodeAction(
                     ActionManager.OnPickTrigger,
                     () => {
-                        highlightHouse(index);
-                        console.log(`House ${index + 1} picked`);
-                        // Here you can send the house number to your backend
+
+                        if (isScreenOwner && (index > 5 && index < 12)){
+                            highlightHouse(index);
+                            console.log(`House ${index + 1} picked`);
+                            // Here you can send the house number to your backend
+
+                            const playerHouses: string[] = challengeInfo.player_turn.houses
+
+                            console.log(playerHouses)
+
+                            const exists = playerHouses.includes(`House${index+1}`);
+
+                            const actualHouse =  mapHouseIndex(index,exists,playerHouses) + 1;
+
+                            makeMove(actualHouse.toString())
+                            .then(() => {
+                                console.log("Move made successfully");
+                            })
+                            .catch((error) => {
+                                console.error("Error making move:", error);
+                            });
+
+
+                        }
                     }
                 )
             );
@@ -680,13 +733,129 @@ const OwareGame = ({ challengeInfo }: {challengeInfo: Challenge}) => {
         return res;
     }
 
+    const makeMove = async (selectedHouse: string) => {
 
+        const dataToSend = {
+            method: "make_move",
+            challenge_id: parseInt(challengeInfo.challenge_id),
+             house: selectedHouse
+          };
+
+          const toastId = uuidv4();
+  
+          toast({
+            id: toastId,
+            title: "making move",
+            description: "Please wait...",
+            status: "info",
+            duration: null,
+            isClosable: true,
+          });
+
+          try {
+            const result = await sendInput(JSON.stringify(dataToSend), writeContractAsync);
+            if (result.success) {
+    
+              toast.update(toastId, {
+                title: "move made",
+                description: "move successfully made.",
+                status: "success",
+                duration: 5000,
+                isClosable: true,
+              });
+
+              async function updateLogsFromFetch() {
+                const notices = await fetchAndProcessNotices();
+                if (gameInfoPanelRef.current) {
+                  prepareLogs(notices, gameInfoPanelRef.current);
+                }
+              }
+
+              await updateLogsFromFetch()
+
+             
+              // Additional success handling (e.g., reset form, close modal, etc.)
+            } else {
+              throw new Error("Failed to make move");
+            }
+          } catch (error) {
+            console.error("Error making move:", error);
+            toast.update(toastId, {
+              title: "Error",
+              description: "Failed to make move. Please try again.",
+              status: "error",
+              duration: 5000,
+              isClosable: true,
+            });
+            // Additional error handling if needed
+          }
+    }
+
+    function mapHouseIndex(index: number,exists: boolean,houses:string[]) {
+        if (exists) {
+            const indexofhouse = houses.indexOf(`House${index+1}`)
+            console.log(indexofhouse)
+            return 11 - indexofhouse;
+        } else {
+            return 11 - index;
+        }
+    }
+
+    function prepareLogs(logs: any[],gameInfoPanel: StackPanel,maxLogs: number = 5){
+        gameInfoPanel.clearControls();
+
+
+        const logText = new TextBlock();
+        logText.color = "orange";
+        logText.fontSize = 14;
+        logText.height = "30px";
+        logText.textHorizontalAlignment = Control.HORIZONTAL_ALIGNMENT_LEFT;
+        logText.left = "10px";
+        logText.text = ""; // Start empty
+
+        gameInfoPanel.addControl(logText);
+
+        let currentIndex = 0;
+
+    function displayNextLog() {
+        if (currentIndex < logs.length) {
+            const logData = hexToString(logs[currentIndex].node.payload);
+            logText.text = `📝 ${logData}`;
+            currentIndex++;
+            setTimeout(displayNextLog, 5000); // Display each log for 2 seconds
+        } else {
+            logText.text = ""; // Clear the log when all messages are displayed
+        }
+    }
+
+    displayNextLog();
+    }
+
+    async function fetchAndProcessNotices(maxEntries: number = 5): Promise<any[]> {
+        try {
+          // Fetch the data
+          const response_data: any =  await fetchGraphQLData(NOTICES_QUERY);
+      
+          // Process the data
+          function getLastNOrAll<T>(arr: T[], n: number): T[] {
+            return arr.slice(-n);
+          }
+      
+          // Get the last 'maxEntries' number of notices
+          const processedNotices = getLastNOrAll(response_data.notices.edges, maxEntries);
+      
+          return processedNotices;
+        } catch (error) {
+          console.error('Error fetching and processing notices:', error);
+          return [];
+        }
+      }
 
 
     return (
         <Flex direction="column" align="center" justify="center" bg="gray.900">
           <Box 
-            width="80%" 
+            width="90%" 
             height="600px" 
             bg="white" 
             borderRadius="lg" 
