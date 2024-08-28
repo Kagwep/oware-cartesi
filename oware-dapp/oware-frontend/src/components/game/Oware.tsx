@@ -28,7 +28,8 @@ import {
   DynamicTexture,
   CannonJSPlugin,
   Tools,
-  CreateTextShapePaths
+  CreateTextShapePaths,
+  Texture
 } from "@babylonjs/core"
 import { AdvancedDynamicTexture, Control, StackPanel, TextBlock } from '@babylonjs/gui/2D';
 import "@babylonjs/loaders/glTF";
@@ -43,6 +44,7 @@ import { useWriteInputBoxAddInput } from "../../hooks/generated";
 import { fetchGraphQLData } from '../../utils/api';
 import { NOTICES_QUERY } from '../../utils/query';
 import { hexToString } from 'viem';
+import sphereTexture from "../../../assets/nuttexture3.avif";
 
 BabylonFileLoaderConfiguration.LoaderInjectedPhysicsEngine = CANNON ;
 window.CANNON = CANNON;
@@ -94,19 +96,29 @@ const OwareGame = ({ challengeInfo }: {challengeInfo: Challenge}) => {
       const originalMaterialRef = useRef<StandardMaterial | null>(null);
       const gameInfoPanelRef = useRef<StackPanel| null>(null);
 
+      const addedSpheres: Mesh[] = [];
+      const capturedSpheres: Mesh[] = [];
+
+      let sphere_count: number  = 1;
+
       const { address } = useAccount();
 
     useEffect(() => {
         if (canvasRef.current) {
             const engine = new Engine(canvasRef.current, true);
             const scene = new Scene(engine);
-            
-            sceneRef.current = scene;
+
+
+       
+            const physicsPlugin = new CannonJSPlugin();
+            scene.enablePhysics(null, physicsPlugin);
             scene.collisionsEnabled = true;
 
-            const gravityVector = new Vector3(0, -9.81, 0);
-            const physicsPlugin = new CannonJSPlugin();
-            scene.enablePhysics(gravityVector, physicsPlugin);
+            
+            sceneRef.current = scene;
+           
+
+
             
             // Camera setup
             const camera = new ArcRotateCamera("camera", -Math.PI / 2, Math.PI / 3, 15, Vector3.Zero(), scene);
@@ -124,6 +136,9 @@ const OwareGame = ({ challengeInfo }: {challengeInfo: Challenge}) => {
             camera.upperAlphaLimit = -Math.PI / 2;
 
             console.log(address)
+
+
+        
 
             // if( address && formattedAddressCheck(challengeInfo.creator[1], address)){
                  
@@ -156,6 +171,9 @@ const OwareGame = ({ challengeInfo }: {challengeInfo: Challenge}) => {
                 board.scaling = new Vector3(scaleFactor, scaleFactor, scaleFactor);
 
                 result.meshes.forEach((mesh) => {
+                    mesh.unfreezeWorldMatrix();
+                    mesh.checkCollisions = true;
+                    mesh.checkCollisions = true;
                     updateBoundingInfo(mesh as Mesh);
                     //addPhysicsAggregate(mesh);
                     // Store meshes based on their names
@@ -414,103 +432,145 @@ const OwareGame = ({ challengeInfo }: {challengeInfo: Challenge}) => {
     
     const createSeedsAndUpdateDisplays = (state: number[]) => {
         if (!sceneRef.current) return;
+
+        const isScreenOwner = address && formattedAddressCheck(challengeInfo.player_turn.address, address);
+
+        const HouseName1 = `House${1}`;
+        const HouseName7 = `House${7}`;
+
+        const isPlayersHouse1 = challengeInfo.player_turn.houses.includes(HouseName1);
+        const isPlayersHouse7 = challengeInfo.player_turn.houses.includes(HouseName7);
+
+        console.log(isPlayersHouse1,isPlayersHouse7)
+
+        console.log(challengeInfo.player_turn.houses)
+
+        let new_seed_state;
+
+        if(isPlayersHouse1 && isScreenOwner){
+            let statePartOne = state.slice(1, 6);
+            let statePartTwo = state.slice(6,12);
+
+            new_seed_state = [...statePartTwo.reverse(), ...statePartOne.reverse()]
+
+        }else if(isPlayersHouse7){
+            let statePartOne = state.slice(0, 6);
+            let statePartTwo = state.slice(6,12);
+
+            new_seed_state = [...statePartOne.reverse(), ...statePartTwo.reverse()]
+
+        }
+        
+        
+        
+        else{
+            new_seed_state = state
+        }
+
+        console.log(gameMeshesRef.current.houses)
+        console.log(state)
+        console.log(new_seed_state)
+
     
-        state.forEach((seedCount, index) => {
-            const house = gameMeshesRef.current.houses[index] as Mesh;
+        new_seed_state.forEach((seedCount, index) => {
+
+            const house = gameMeshesRef.current.houses[index];
             const houseDisplay = gameMeshesRef.current.houseDisplays[index];
             
     
-            if (!house.getBoundingInfo) {
-                console.error(`House ${index + 1} does not have bounding info.`);
-                return;
-            }
+            // if (!house.getBoundingInfo) {
+            //     console.error(`House ${index + 1} does not have bounding info.`);
+            //     return;
+            // }
     
-            const boundingInfo = house.getBoundingInfo();
-            const worldMatrix = house.getWorldMatrix();
-            const min = Vector3.TransformCoordinates(boundingInfo.minimum, worldMatrix);
-            const max = Vector3.TransformCoordinates(boundingInfo.maximum, worldMatrix);
+            // const boundingInfo = house.getBoundingInfo();
+            // const worldMatrix = house.getWorldMatrix();
+            // const min = Vector3.TransformCoordinates(boundingInfo.minimum, worldMatrix);
+            // const max = Vector3.TransformCoordinates(boundingInfo.maximum, worldMatrix);
     
-            console.log(`House ${index + 1} bounds:`, min, max);
+            // console.log(`House ${index + 1} bounds:`, min, max);
     
-            // Calculate house dimensions and center
-            const houseWidth = max.x - min.x+0.02;
-            const houseDepth = max.z - min.z+0.02;
-            const houseHeight = max.y - min.y + 0.001;
-            const houseCenter = new Vector3(
-                (min.x + max.x) / 2,
-                (min.y + max.y) / 2,
-                (min.z + max.z) / 2
-            );
+            // // Calculate house dimensions and center
+            // const houseWidth = max.x - min.x+0.02;
+            // const houseDepth = max.z - min.z+0.02;
+            // const houseHeight = max.y - min.y + 0.001;
+            // const houseCenter = new Vector3(
+            //     (min.x + max.x) / 2,
+            //     (min.y + max.y) / 2,
+            //     (min.z + max.z) / 2
+            // );
     
-            // Define seed size (4 times larger than before)
-            const seedDiameter = Math.min(houseWidth, houseDepth, houseHeight) * 0.2; // 32% of smallest dimension (8% * 4)
-            const seedRadius = seedDiameter / 2;
+            // // Define seed size (4 times larger than before)
+            // const seedDiameter = Math.min(houseWidth, houseDepth, houseHeight) * 0.2; // 32% of smallest dimension (8% * 4)
+            // const seedRadius = seedDiameter / 2;
     
-            // Function to generate a random position with bias towards the center
-            const generateRandomPosition = (): Vector3 => {
-                const randomAngle = Math.random() * Math.PI * 2;
-                const maxDistance = Math.min(houseWidth, houseDepth, houseHeight) / 2 - seedRadius;
+            // // Function to generate a random position with bias towards the center
+            // const generateRandomPosition = (): Vector3 => {
+            //     const randomAngle = Math.random() * Math.PI * 2;
+            //     const maxDistance = Math.min(houseWidth, houseDepth, houseHeight) / 2 - seedRadius;
                 
-                // Use square root for center bias (adjusted for larger seeds)
-                const distance = Math.sqrt(Math.random()) * maxDistance;
+            //     // Use square root for center bias (adjusted for larger seeds)
+            //     const distance = Math.sqrt(Math.random()) * maxDistance;
                 
-                const offsetX = Math.cos(randomAngle) * distance;
-                const offsetZ = Math.sin(randomAngle) * distance;
+            //     const offsetX = Math.cos(randomAngle) * distance;
+            //     const offsetZ = Math.sin(randomAngle) * distance;
                 
-                // Y-axis uses a different distribution to account for gravity
-                const offsetY = Math.random() * (houseHeight - seedDiameter);
+            //     // Y-axis uses a different distribution to account for gravity
+            //     const offsetY = Math.random() * (houseHeight - seedDiameter);
     
-                return new Vector3(
-                    houseCenter.x + offsetX,
-                    min.y + seedRadius + offsetY,
-                    houseCenter.z + offsetZ
-                );
-            };
+            //     return new Vector3(
+            //         houseCenter.x + offsetX,
+            //         min.y + seedRadius + offsetY,
+            //         houseCenter.z + offsetZ
+            //     );
+            // };
     
-            // Function to check if a position is not colliding with existing seeds
-            const isNotColliding = (position: Vector3, existingPositions: Vector3[]): boolean => {
-                return !existingPositions.some(existing => 
-                    Vector3.Distance(position, existing) < seedDiameter * 1.1 // Increased buffer to 10% for larger seeds
-                );
-            };
+            // // Function to check if a position is not colliding with existing seeds
+            // const isNotColliding = (position: Vector3, existingPositions: Vector3[]): boolean => {
+            //     return !existingPositions.some(existing => 
+            //         Vector3.Distance(position, existing) < seedDiameter * 1.1 // Increased buffer to 10% for larger seeds
+            //     );
+            // };
     
-            const seedPositions: Vector3[] = [];
+            // const seedPositions: Vector3[] = [];
     
             // Create seeds
             for (let i = 0; i < seedCount; i++) {
-                let validPosition: Vector3 | null = null;
-                let attempts = 0;
-                const maxAttempts = 100; // Reduced attempts due to larger seed size
+                addSphereInsideMesh(house,`seedName${sphere_count}`,sphere_count);
+                sphere_count += 1 
+                // let validPosition: Vector3 | null = null;
+                // let attempts = 0;
+                // const maxAttempts = 100; // Reduced attempts due to larger seed size
     
-                while (!validPosition && attempts < maxAttempts) {
-                    const candidatePosition = generateRandomPosition();
+                // while (!validPosition && attempts < maxAttempts) {
+                //     const candidatePosition = generateRandomPosition();
     
-                    if (isNotColliding(candidatePosition, seedPositions)) {
-                        validPosition = candidatePosition;
-                    }
+                //     if (isNotColliding(candidatePosition, seedPositions)) {
+                //         validPosition = candidatePosition;
+                //     }
     
-                    attempts++;
-                }
+                //     attempts++;
+                // }
     
-                if (validPosition) {
-                    seedPositions.push(validPosition);
+                // if (validPosition) {
+                //     seedPositions.push(validPosition);
     
-                    const seed = MeshBuilder.CreateSphere(`seed-${index}-${i}`, { diameter: seedDiameter }, sceneRef.current);
+                //     const seed = MeshBuilder.CreateSphere(`seed-${index}-${i}`, { diameter: seedDiameter }, sceneRef.current);
        
                     
-                    const seedMaterial = new StandardMaterial(`sphereMaterial${index}`, sceneRef.current);
-                    seedMaterial.diffuseColor = new Color3(1, 0.8, 0);
-                    seed.material = seedMaterial;
+                //     const sphereMaterial = new StandardMaterial(`seed-${index}-${i}`, sceneRef.current);
+                //     sphereMaterial.diffuseTexture = new Texture(sphereTexture, sceneRef.current);
+                //     seed.material = sphereMaterial;
                     
-                    seed.position = validPosition;
+                //     seed.position = validPosition;
 
-                    seed.physicsImpostor = new PhysicsImpostor(seed, PhysicsImpostor.MeshImpostor, { mass: 0, restitution: 0.1 }, sceneRef.current);
+                //     seed.physicsImpostor = new PhysicsImpostor(seed, PhysicsImpostor.MeshImpostor, { mass: 0, restitution: 0.1 }, sceneRef.current);
     
-                    // Add physics impostor to the seed
-                   // addPhysicsAggregate(seed)
-                } else {
-                    console.warn(`Couldn't place seed ${i + 1} in house ${index + 1} after ${maxAttempts} attempts.`);
-                }
+                //     // Add physics impostor to the seed
+                //    // addPhysicsAggregate(seed)
+                // } else {
+                //     console.warn(`Couldn't place seed ${i + 1} in house ${index + 1} after ${maxAttempts} attempts.`);
+                // }
             }
     
             // Update house display
@@ -648,6 +708,113 @@ const OwareGame = ({ challengeInfo }: {challengeInfo: Challenge}) => {
         return formattedAddressCheck(challengeInfo.creator[1], address)
     } 
 
+    function addSphereInsideMesh(mesh: AbstractMesh,seedName: string,sphere_count:number, capture:boolean = false, isDefault:boolean=false) {
+        // Create a new sphere with MeshBuilder
+        const newSphere = MeshBuilder.CreateSphere(seedName, { diameter: 0.05 }, sceneRef.current); // Adjust the diameter as needed
+
+        //newSphere.physicsImpostor = new PhysicsImpostor(newSphere, PhysicsImpostor.SphereImpostor, { mass: 0.02 }, sceneRef.current);
+
+        let sphereADefault: boolean = false;
+        // Compute the center of the clicked mesh's bounding box in world space
+        const boundingBoxCenter =  () : Vector3 => {
+
+          if (isDefault){
+            if(gameMeshesRef.current.board){
+              const offset = gameMeshesRef.current.board.position.clone();
+              const boundingBoxCenter = mesh.getBoundingInfo().boundingBox.centerWorld;
+              const resultantVector = boundingBoxCenter.add(offset);
+              sphereADefault = true;
+              return resultantVector
+            }else {
+              sphereADefault = true;
+              return mesh.getBoundingInfo().boundingBox.centerWorld;
+            }
+          }else{
+            return mesh.getBoundingInfo().boundingBox.centerWorld;
+          }   
+        } 
+
+        newSphere.position.copyFrom(boundingBoxCenter());
+        newSphere.isPickable = false;
+        // applyRandomDeformities(newSphere, 6);
+
+        //console.log(boundingBoxCenter);
+
+        const sphereMaterial = new StandardMaterial(`seed-${sphere_count}`, sceneRef.current);
+        sphereMaterial.diffuseTexture = new Texture(sphereTexture, sceneRef.current);
+        newSphere.material = sphereMaterial;
+
+        // Check for collisions with previously added spheres
+        if (checkSphereCollisions(newSphere, (mesh.name === "captured1" || mesh.name === "captured2") ? true : false)) {
+          // If collision detected, calculate a new position
+          const newPosition = calculateNewSpherePosition(mesh,sphereADefault);
+          newSphere.position.copyFrom(newPosition);
+          newSphere.isPickable = false;
+        } 
+
+        if (!capture){
+            addedSpheres.push(newSphere);
+           } else{
+            capturedSpheres.push(newSphere);
+            
+           }
+   
+      }
+
+    // Function to check for collisions with existing spheres
+    function checkSphereCollisions(newSphere: Mesh,capture: boolean = false): boolean {
+        const meshToCheck = !capture ? addedSpheres : capturedSpheres;
+        for (const existingSphere of meshToCheck) {
+            // Calculate the distance between the centers of the spheres
+            const distance = Vector3.Distance(existingSphere.position, newSphere.position);
+
+            // Check if the spheres overlap (distance less than sum of their radii)
+            if (distance < (existingSphere.scaling.x + newSphere.scaling.x) / 2) {
+            return true; // Collision detected
+            }
+        }
+
+        return false; // No collision detected
+        }
+
+              
+        function calculateNewSpherePosition(mesh: AbstractMesh, isDefaultSphere = false): Vector3 {
+            const getBoundingBoxCenter = (): Vector3 => {
+                if (isDefaultSphere && gameMeshesRef.current.board) {
+                    const offset = gameMeshesRef.current.board.position.clone();
+                    const boundingBoxCenter = mesh.getBoundingInfo().boundingBox.centerWorld;
+                    return boundingBoxCenter.add(offset);
+                } else {
+                    return mesh.getBoundingInfo().boundingBox.centerWorld;
+                }
+            };
+        
+            const boundingBoxCenter = getBoundingBoxCenter();
+            const radius = mesh.getBoundingInfo().boundingBox.extendSize.length() / 2;
+        
+            // Generate random spherical coordinates
+            const theta = Math.random() * Math.PI; // Azimuthal angle (0 to π)
+            const phi = Math.random() * Math.PI; // Polar angle (0 to π)
+        
+            // Convert spherical coordinates to Cartesian
+            const x = radius * Math.sin(theta) * Math.cos(phi);
+            const y = radius * Math.sin(theta) * Math.sin(phi);
+            const z = radius * Math.cos(theta);
+        
+            // Ensure the point is in the upper hemisphere
+            const newPosition = new Vector3(
+                boundingBoxCenter.x + x,
+                boundingBoxCenter.y + Math.abs(y), // Use absolute value to keep it in upper hemisphere
+                boundingBoxCenter.z + z
+            );
+        
+            if (mesh.name === 'capture-house') {
+                console.log("New position sphere", newPosition);
+            }
+        
+            return newPosition;
+        }
+        
 
     const setupHousePicking = () => {
         if (!sceneRef.current) return;
@@ -669,13 +836,31 @@ const OwareGame = ({ challengeInfo }: {challengeInfo: Challenge}) => {
 
                             const playerHouses: string[] = challengeInfo.player_turn.houses
 
-                            console.log(playerHouses)
+                            // console.log(playerHouses)
 
                             const exists = playerHouses.includes(`House${index+1}`);
 
                             const actualHouse =  mapHouseIndex(index,exists,playerHouses) + 1;
 
-                            makeMove(actualHouse.toString())
+
+                            const houseSeeds = challengeInfo.state[actualHouse -1]
+
+                            if (houseSeeds <= 0){
+
+                                const toastId = uuidv4();
+                    
+                                toast({
+                                    id: toastId,
+                                    title: "House empty",
+                                    description: "Please select a house with seeds.",
+                                    status: "warning",
+                                    duration: 5000,
+                                    isClosable: true,
+                                });
+
+                            }
+
+                            makeMove(`House${actualHouse}`)
                             .then(() => {
                                 console.log("Move made successfully");
                             })
@@ -794,7 +979,7 @@ const OwareGame = ({ challengeInfo }: {challengeInfo: Challenge}) => {
     function mapHouseIndex(index: number,exists: boolean,houses:string[]) {
         if (exists) {
             const indexofhouse = houses.indexOf(`House${index+1}`)
-            console.log(indexofhouse)
+            //console.log(indexofhouse)
             return 11 - indexofhouse;
         } else {
             return 11 - index;

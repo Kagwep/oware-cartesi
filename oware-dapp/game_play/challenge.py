@@ -10,6 +10,11 @@ import sys
 import time
 import tflite_runtime.interpreter as tflite
 from .movesevaluator import GameplayEvaluationMoves
+import logging
+
+
+logging.basicConfig(level="INFO")
+logger = logging.getLogger(__name__)
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -52,7 +57,6 @@ class Challenge:
 
     def spawn(self):
         
-
         random_number = random.randint(1, 6)
 
         if random_number > 3:
@@ -109,10 +113,10 @@ class Challenge:
 
             # Check if stalemate count reached
             if self.players_captures_track_count >= self.stale_mate_count:
-                stale_mate = True
+                self.stale_mate = True
             
             # Handle stalemate
-            if stale_mate:
+            if self.stale_mate:
                 print("Stalemate detected. Ending game_play.")
                 result = self.game.state.set_winner()
 
@@ -132,6 +136,12 @@ class Challenge:
                     result = self.game.state.update_capture_and_win(self.turn,player_seeds) 
 
         challenge_winner, challenge_ended = self.check_winner(result) 
+
+        logger.info(f"Current turn {self.turn.get_player()}")
+        self.game.state.change_turn(self.turn)
+        self.turn = self.player_one if self.turn == self.player_two else self.player_two
+        logger.info(f"After turn {self.turn.get_player()}")
+        
         
         return {
             "game_result": result,
@@ -152,27 +162,35 @@ class Challenge:
         if result == 1:
             winner = self.player_one
             self.player_one_wins += 1
+            self.round_winners[self.current_round] = winner
+            return True
         elif result == 2:
             winner = self.player_two
             self.player_two_wins += 1
+            self.round_winners[self.current_round] = winner
+            return True
         else:
-            winner = None  # Draw
+            if self.game.state.inprogress:
+                return False
+            else:
+                return True
 
-        self.round_winners[self.current_round] = winner
-                    
-    
-    def check_winner(self, result):
-        self.update_round_winner(result)
         
-        if self.current_round < self.rounds:
+                
+    def check_winner(self, result):
+        is_winner = self.update_round_winner(result)
+        
+        if (self.current_round < self.rounds) and is_winner:
             self.current_round += 1
             self.spawn()  # Reset the game for the next round
             return None, False  # No overall winner yet, challenge not ended
-        else:
+        elif (self.current_round == self.rounds) and is_winner:
             challenge_winner = self.determine_challenge_winner()
             if challenge_winner is None:
                 return self.tiebreaker()
             return challenge_winner, True  # Challenge ended
+        else:
+            return None, False
 
     def determine_challenge_winner(self):
         if self.player_one_wins > self.player_two_wins:

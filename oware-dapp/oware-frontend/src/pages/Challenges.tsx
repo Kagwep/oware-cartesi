@@ -17,54 +17,24 @@ import ListChallenges from '../components/ListChallenges';
 import { inspect } from '../utils';
 import { stringToHex,hexToString } from "viem";
 import { sendInput } from '../utils';
-
+import { useChallenges } from '../hooks/useChallenges';
 import { v4 as uuidv4 } from 'uuid';
 import { useWriteInputBoxAddInput } from '../hooks/generated';
 
 export default function Challenges() {
   const [isOpen, setIsOpen] = useState(false);
   const [mychallenges, setMychallenges] = useState([])
-  const [challenges, setChallenges] = useState([]);
+  const { challenges, fetchChallenges } = useChallenges();
   const toast = useToast();
 
   const { address, isConnected, chain } = useAccount();
 
   const { writeContractAsync } = useWriteInputBoxAddInput();
 
-  async function fetchChallenges() {
-    try {
-      if(address){
-        let  results  = await inspect(JSON.stringify({method: "get_all_challenges"})); 
-        console.log(results)
-        
-        try {
-            results = JSON.parse(hexToString(results[0].payload))["challenges"]
-            console.log("results: ", results);
-            setChallenges(results);
-        }catch (e){
-          console.log("Error: ", e)
-        }
-        
-      }
-    } catch (error) {
-      toast({
-        title: "Error fetching challenges.",
-        description: "There was an issue loading the challenges data.",
-        status: "error",
-        duration: 5000,
-        isClosable: true,
-      });
-    }
-  }
- 
-
   useEffect(() => {
     // Simulating fetch request to the backend for challenges data
-
-
     fetchChallenges();
-  }, [toast,address]);
-
+  }, [toast,address,fetchChallenges]);
 
 
   const handleClick = () => {
@@ -109,6 +79,13 @@ export default function Challenges() {
           isClosable: true,
         });
         // Additional success handling (e.g., reset form, close modal, etc.)
+
+          // Wait for 20 seconds
+        await new Promise(resolve => setTimeout(resolve, 20000));
+
+
+        await fetchChallenges()
+
       } else {
         throw new Error("Failed to join challenge");
       }
@@ -124,7 +101,7 @@ export default function Challenges() {
       // Additional error handling if needed
     }
 
-    fetchChallenges()
+    
 
   };
 
@@ -142,7 +119,7 @@ export default function Challenges() {
         </Button>
         <ChallengeFormModal isOpen={isOpen} onClose={() => setIsOpen(false)}/>
       </Stack>
-      <ListChallenges challenges={challenges} onJoinChallenge={handleJoinChallenge} />
+      <ListChallenges challenges={challenges} onJoinChallenge={handleJoinChallenge} fetchChallenges={fetchChallenges} />
     </Stack>
   );
 }

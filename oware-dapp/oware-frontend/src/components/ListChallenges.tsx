@@ -10,13 +10,15 @@ import { useWriteInputBoxAddInput } from "../hooks/generated";
 import Arena from '../pages/Arena';
 import { fetchGraphQLData } from '../utils/api';
 import { NOTICES_QUERY } from '../utils/query';
+import { useChallenges } from '../hooks/useChallenges';
 
 interface ListChallengesProps {
   challenges: Challenge[];
   onJoinChallenge: (data: any) => void;
+  fetchChallenges: () => Promise<void>;
 }
 
-const ListChallenges: React.FC<ListChallengesProps> = ({ challenges, onJoinChallenge}) => {
+const ListChallenges: React.FC<ListChallengesProps> = ({ challenges, onJoinChallenge, fetchChallenges}) => {
   const bgColor = useColorModeValue('gray.900', 'gray.700');
   const borderColor = useColorModeValue('gray.200', 'gray.600');
   const { address, isConnected } = useAccount()
@@ -95,6 +97,13 @@ const ListChallenges: React.FC<ListChallengesProps> = ({ challenges, onJoinChall
       const response_data = await fetchGraphQLData(NOTICES_QUERY);
 
       console.log("----->",response_data)
+
+                // Wait for 20 seconds
+       await new Promise(resolve => setTimeout(resolve, 5000));
+
+       await fetchChallenges()
+
+      
       
         // Additional success handling (e.g., reset form, close modal, etc.)
       } else {

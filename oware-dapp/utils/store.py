@@ -334,7 +334,7 @@ class Store:
                 "error": "Challenge not found"
             }
         
-        if sender != challenge.turn.address or not challenge.in_progress:
+        if sender != challenge.turn.player_address or not challenge.in_progress:
             return {
                 "success": False,
                 "error": "It's not your turn or the challenge is not in progress"
@@ -410,7 +410,7 @@ class Store:
         
         challenge = self.tournaments.challenges.get(challenge_id)
         
-        if sender != challenge.turn.address or not challenge.in_progress:
+        if sender != challenge.turn.player_address or not challenge.in_progress:
             return {
                 "success": False,
                 "error": "It's not your turn or the challenge is not in progress"
@@ -529,6 +529,54 @@ class Store:
         output = json.dumps({"challenges": challenge_list})
 
         return output
+    
+    def get_challenge(self,payload_data):
+
+        challenge_id = payload_data.get("challenge_id")
+
+        if not challenge_id:
+            return {
+                "success": False,
+                "error": "Challenge ID is required"
+            }
+        
+        if not challenge:
+            return {
+                "success": False,
+                "error": "Challenge not found"
+            }
+            
+        challenge = self.challenges.get(challenge_id)
+
+        challenge_list = []
+
+        challenge_list.append({
+                "challenge_id": challenge_id,
+                "creator" : challenge.creator,
+                "opponent": challenge.opponent,
+                "in_progress":  challenge.in_progress,
+                "game_ended": challenge.game_ended,
+                "winner": challenge.winner,
+                "created_at":challenge.created_at,
+                "challenge_type":challenge.challenge_type,
+                "rounds": challenge.rounds,
+                "current_round":challenge.current_round,
+                "player_turn":challenge.turn.get_player() if challenge.turn is not None else None,
+                "player_one_captured":challenge.player_one.get_player() if challenge.player_one is not None else None,
+                "player_two_captured":challenge.player_two.get_player() if challenge.player_two is not None else None,
+                "state": challenge.game.board.get_seeds() if challenge.game is not None else None
+            })
+
+        
+        output = json.dumps({"challenges": challenge_list})
+
+        return {
+                "success": True,
+                "message": "challenge fetched",
+                "result": output
+            }
+
+ 
     
 
     def add_or_update_player(self,player_name, eth_address, score_change):

@@ -7,13 +7,14 @@ import { UseToastOptions } from "@chakra-ui/react";
 
 export const sendInput = async (inputValue: string, writeContractAsync: Function) => {
     try {
-      await writeContractAsync({
+      const tx = await writeContractAsync({
         args: [
           dAppAddress,
           stringToHex(inputValue),
         ],
       });
       return { success: true };
+      
     } catch (error) {
       console.error("Error in sendInput:", error);
       return { success: false, error };

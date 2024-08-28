@@ -34,11 +34,13 @@ import {
   ChevronDownIcon,
   ChevronRightIcon,
   ChevronLeftIcon,
+  
 } from '@chakra-ui/icons'
 import { Link } from 'react-router-dom'
 import { shortenAddress } from '../../utils'
 import { useEffect,useState } from 'react'
 import { useAccount, useConnect, useDisconnect, useSwitchChain } from "wagmi";
+import { Copy,  LogOut, Wallet } from 'lucide-react';
 
 export default function WithSubnavigation() {
   const { isOpen, onToggle } = useDisclosure();
@@ -51,6 +53,7 @@ export default function WithSubnavigation() {
   const { chains, switchChain } = useSwitchChain();
   const [isChainDropdownOpen, setIsChainDropdownOpen] = useState(false);
  
+  
 
   const handleCopyAddress = () => {
     if (address) {
@@ -65,10 +68,11 @@ export default function WithSubnavigation() {
     }
   };
 
-  const menuBg = useColorModeValue('white', 'gray.800');
-  const menuHoverBg = useColorModeValue('gray.100', 'gray.700');
-  const buttonBg = useColorModeValue('purple.500', 'purple.200');
-  const buttonColor = useColorModeValue('white', 'gray.800');
+  const buttonBg = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+  const buttonColor = 'white';
+  const menuBg = 'slate.800';
+  const menuHoverBg = 'slate.700';
+  const menuTextColor = 'purple';
 
   return (
     <Box>
@@ -112,100 +116,119 @@ export default function WithSubnavigation() {
 
 
         {isConnected ? (
-          <Menu>
-            <MenuButton
-              as={Button}
-              rightIcon={<ChevronDownIcon />}
-              bg={buttonBg}
-              color={buttonColor}
-              _hover={{ bg: 'purple.600' }}
-              _active={{ bg: 'purple.700' }}
-            >
-              {shortenAddress(address || '')}
-            </MenuButton>
-            <MenuList bg={menuBg} borderColor="purple.200">
-              <MenuItem onClick={handleCopyAddress} _hover={{ bg: menuHoverBg }}>Copy Address</MenuItem>
-              <MenuItem isDisabled _hover={{ bg: menuHoverBg }}>
-                Chain: {chain?.name} | {chain?.id}
-              </MenuItem>
-              <MenuDivider />
-              <Popover
-                isOpen={isOpenPopover}
-                onClose={onClosePopover}
-                placement='bottom'
-                closeOnBlur={false}
-              >
-                <PopoverTrigger>
-                  <Button 
-                    w="100%" 
-                    justifyContent="flex-start" 
-                    fontWeight="normal" 
-                    bg={menuBg} 
-                    _hover={{ bg: menuHoverBg }}
-                    onClick={onTogglePopover}
-                  >
-                    Switch Chain
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent bg={menuBg} borderColor="purple.200">
-                  <PopoverHeader fontWeight='semibold' color='purple.500'>Select Network</PopoverHeader>
-                  <PopoverArrow />
-                  <PopoverCloseButton />
-                  <PopoverBody>
-                    {chains.map((chainOption) => (
-                      <MenuItem
-                        key={chainOption.id}
-                        onClick={() => {
-                          switchChain({ chainId: chainOption.id });
-                          onClosePopover();
-                        }}
-                        _hover={{ bg: menuHoverBg }}
-                      >
-                        {chainOption.name}
-                      </MenuItem>
-                    ))}
-                  </PopoverBody>
-                </PopoverContent>
-              </Popover>
-              <MenuDivider />
-              <MenuItem onClick={() => disconnect()} color="red.500" _hover={{ bg: menuHoverBg }}>
-                Disconnect
-              </MenuItem>
-            </MenuList>
-          </Menu>
-        ) : (
-          <Menu>
-            <MenuButton
-              as={Button}
-              rightIcon={<ChevronDownIcon />}
-              bg={buttonBg}
-              color={buttonColor}
-              _hover={{ bg: 'purple.600' }}
-              _active={{ bg: 'purple.700' }}
-            >
-              Connect
-            </MenuButton>
-            <MenuList bg={menuBg} borderColor="purple.200">
-              {connectors.map((connector) => (
-                <MenuItem 
-                  key={connector.id}
-                  onClick={() => connect({ connector })}
-                  _hover={{ bg: menuHoverBg }}
+                <Menu>
+                <MenuButton
+                  as={Button}
+                  rightIcon={<ChevronDownIcon />}
+                  bg={buttonBg}
+                  color={buttonColor}
+                  fontWeight="bold"
+                  borderRadius="full"
+                  px={6}
+                  _hover={{ opacity: 0.9 }}
+                  _active={{ opacity: 0.8 }}
                 >
-                  {connector.name}
-                </MenuItem>
-              ))}
-              <MenuDivider />
-              <MenuItem isDisabled _hover={{ bg: menuHoverBg }}>
-                Status: {status.toUpperCase()}
-              </MenuItem>
-              {error && (
-                <MenuItem isDisabled color="red.500" _hover={{ bg: menuHoverBg }}>
-                  Error: {error.message}
-                </MenuItem>
-              )}
-            </MenuList>
-          </Menu>
+                  <Flex align="center">
+                    <Icon as={Wallet} mr={2} />
+                    {shortenAddress(address || '')}
+                  </Flex>
+                </MenuButton>
+                <MenuList bg={menuBg} borderColor="purple.500" borderWidth={2} boxShadow="lg">
+                  <MenuItem onClick={handleCopyAddress} _hover={{ bg: menuHoverBg }} color={menuTextColor}>
+                    <Icon as={Copy} mr={2} />
+                    <Text>Copy Address</Text>
+                  </MenuItem>
+                  <MenuItem isDisabled _hover={{ bg: menuHoverBg }} color={menuTextColor}>
+                    <Box>
+                      <Text fontWeight="bold">Chain: {chain?.name}</Text>
+                      <Text fontSize="sm" color="gray.400">ID: {chain?.id}</Text>
+                    </Box>
+                  </MenuItem>
+                  <MenuDivider borderColor="gray.600" />
+                  <Popover
+                    isOpen={isOpenPopover}
+                    onClose={onClosePopover}
+                    placement='right-start'
+                    closeOnBlur={false}
+                  >
+                    <PopoverTrigger>
+                      <Button 
+                      w="100%" 
+                      justifyContent="flex-start" 
+                      fontWeight="normal" 
+                      bg={'white'} 
+                      _hover={{ bg: menuHoverBg }}
+                      onClick={onTogglePopover}
+                    >
+                      Switch Chain
+                    </Button>
+                    </PopoverTrigger>
+                    <PopoverContent bg={menuBg} borderColor="purple.500">
+                      <PopoverHeader fontWeight='semibold' color='purple.300'>Select Network</PopoverHeader>
+                      <PopoverArrow bg={menuBg} />
+                      <PopoverCloseButton color={menuTextColor} />
+                      <PopoverBody>
+                        {chains.map((chainOption) => (
+                          <MenuItem
+                            key={chainOption.id}
+                            onClick={() => {
+                              switchChain({ chainId: chainOption.id });
+                              onClosePopover();
+                            }}
+                            _hover={{ bg: menuHoverBg }}
+                            color={menuTextColor}
+                          >
+                            {chainOption.name}
+                          </MenuItem>
+                        ))}
+                      </PopoverBody>
+                    </PopoverContent>
+                  </Popover>
+                  <MenuDivider borderColor="gray.600" />
+                  <MenuItem onClick={() => disconnect()} color="red.300" _hover={{ bg: menuHoverBg }}>
+                    <Icon as={LogOut} mr={2} />
+                    <Text>Disconnect</Text>
+                  </MenuItem>
+                </MenuList>
+              </Menu>
+            ) : (
+              <Menu>
+                <MenuButton
+                  as={Button}
+                  rightIcon={<ChevronDownIcon />}
+                  bg={buttonBg}
+                  color={buttonColor}
+                  fontWeight="bold"
+                  borderRadius="full"
+                  px={6}
+                  _hover={{ opacity: 0.9 }}
+                  _active={{ opacity: 0.8 }}
+                >
+                  Connect Wallet
+                </MenuButton>
+                <MenuList bg={menuBg} borderColor="purple.500" borderWidth={2} boxShadow="lg">
+                  {connectors.map((connector) => (
+                    <MenuItem 
+                      key={connector.id}
+                      onClick={() => connect({ connector })}
+                      _hover={{ bg: menuHoverBg }}
+                      color={menuTextColor}
+                    >
+                      <Icon as={Wallet} mr={2} />
+                      <Text>{connector.name}</Text>
+                    </MenuItem>
+                  ))}
+                  <MenuDivider borderColor="gray.600" />
+                  <MenuItem isDisabled _hover={{ bg: menuHoverBg }} color={menuTextColor}>
+                    <Text fontWeight="bold">Status: {status.toUpperCase()}</Text>
+                  </MenuItem>
+                  {error && (
+                    <MenuItem isDisabled color="red.300" _hover={{ bg: menuHoverBg }}>
+                      <Text fontWeight="bold">Error: {error.message}</Text>
+                    </MenuItem>
+                  )}
+                </MenuList>
+              </Menu>
         )}
  
       </Flex>

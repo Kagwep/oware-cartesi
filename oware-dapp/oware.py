@@ -196,8 +196,21 @@ def get_round_fixture(payload):
         add_report(output["result"])
         return "accept"
     else:
-        add_report(f"Failed to make move. Error: {output['error']}")
+        add_report(f"Failed to get round fixture. Error: {output['error']}")
         return  'reject'
+    
+
+def get_challenge(payload):
+
+    output = store.get_challenge(payload)
+
+    if output["success"]:
+        add_report(output["result"])
+        return "accept"
+    else:
+        add_report(f"Failed to Fetch Challenge. Error: {output['error']}")
+        return  'reject'
+
     
 def get_player_fixture(payload):
     
@@ -234,6 +247,7 @@ inspect_handler_methods = {
     'get_round_fixture':get_round_fixture,
     'get_player_fixture':get_player_fixture,
     'get_all_tournaments': get_all_tournaments,
+    'get_challenge':get_challenge,
 }
 
 finish = {"status": "accept"}
