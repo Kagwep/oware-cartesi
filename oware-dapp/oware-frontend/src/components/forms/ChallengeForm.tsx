@@ -8,9 +8,10 @@ import { v4 as uuidv4 } from 'uuid';
 interface ChallengeFormModalProps {
   isOpen: boolean;
   onClose: () => void;
+  fetchChallenges: () => Promise<void>;
 }
 
-const ChallengeFormModal = ({ isOpen, onClose}: ChallengeFormModalProps) => {
+const ChallengeFormModal = ({ isOpen, onClose, fetchChallenges}: ChallengeFormModalProps) => {
     const toast = useToast();
     const [accountIndex] = useState(0);
 
@@ -76,6 +77,11 @@ const ChallengeFormModal = ({ isOpen, onClose}: ChallengeFormModalProps) => {
           });
           onClose()
           // Additional success handling (e.g., reset form, close modal, etc.)
+
+          await new Promise(resolve => setTimeout(resolve, 5000));
+
+          await fetchChallenges()
+   
         } else {
           throw new Error("Failed to create challenge");
         }

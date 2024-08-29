@@ -3,7 +3,7 @@ import OwareGame from '../components/game/Oware'
 
 const GamePage = ({chalengeInfo}:{chalengeInfo:any}) => {
   return (
-    <OwareGame challengeInfo={chalengeInfo} />
+    <OwareGame initialChallengeInfo={chalengeInfo} />
   )
 }
 

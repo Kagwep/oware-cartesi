@@ -4,7 +4,7 @@ import { Challenge } from '../utils/types'
 
 const Arena = ({chalengeInfo}:{chalengeInfo: Challenge}) => {
   return (
-    <OwareGame challengeInfo={chalengeInfo} />
+    <OwareGame initialChallengeInfo={chalengeInfo} />
   )
 }
 

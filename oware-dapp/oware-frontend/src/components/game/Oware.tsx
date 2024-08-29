@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Box, Flex } from '@chakra-ui/react';
 import {
   ArcRotateCamera,
@@ -36,7 +36,7 @@ import "@babylonjs/loaders/glTF";
 import { Challenge } from '../../utils/types';
 import * as CANNON from 'cannon';
 import HavokPhysics from '@babylonjs/havok';
-import { formattedAddressCheck, sendInput } from '../../utils';
+import { formattedAddressCheck, inspect, sendInput } from '../../utils';
 import { v4 as uuidv4 } from 'uuid';
 import { useAccount } from 'wagmi';
 import { useToast } from '@chakra-ui/react';
@@ -45,6 +45,7 @@ import { fetchGraphQLData } from '../../utils/api';
 import { NOTICES_QUERY } from '../../utils/query';
 import { hexToString } from 'viem';
 import sphereTexture from "../../../assets/nuttexture3.avif";
+import { useChallenge } from '../../hooks/useChallenges';
 
 BabylonFileLoaderConfiguration.LoaderInjectedPhysicsEngine = CANNON ;
 window.CANNON = CANNON;
@@ -73,7 +74,12 @@ interface GameMeshes {
     [key: string]: AbstractMesh | AbstractMesh[] | null | object;
   }
   
-const OwareGame = ({ challengeInfo }: {challengeInfo: Challenge}) => {
+const OwareGame = ({ initialChallengeInfo }: {initialChallengeInfo: Challenge}) => {
+
+    
+
+    const [challengeInfo, setChallengeInfo] = useState<Challenge>(initialChallengeInfo);
+    const { challenge, isLoading, error, refetch } = useChallenge(challengeInfo.challenge_id);
 
     const canvasRef = useRef(null);
 
@@ -92,6 +98,8 @@ const OwareGame = ({ challengeInfo }: {challengeInfo: Challenge}) => {
       });
 
       const sceneRef = useRef<Scene | undefined>(undefined);
+      const engineRef = useRef(null);
+
       const highlightedHouseRef = useRef<number | null>(null);
       const originalMaterialRef = useRef<StandardMaterial | null>(null);
       const gameInfoPanelRef = useRef<StackPanel| null>(null);
@@ -103,23 +111,19 @@ const OwareGame = ({ challengeInfo }: {challengeInfo: Challenge}) => {
 
       const { address } = useAccount();
 
+      const lowerHouses = ['House1', 'House2', 'House3', 'House4', 'House5', 'House6'];
+      const upperHouses = ['House7', 'House8', 'House9', 'House10', 'House11', 'House12'];
+
     useEffect(() => {
         if (canvasRef.current) {
+
             const engine = new Engine(canvasRef.current, true);
             const scene = new Scene(engine);
 
-
-       
             const physicsPlugin = new CannonJSPlugin();
             scene.enablePhysics(null, physicsPlugin);
             scene.collisionsEnabled = true;
 
-            
-            sceneRef.current = scene;
-           
-
-
-            
             // Camera setup
             const camera = new ArcRotateCamera("camera", -Math.PI / 2, Math.PI / 3, 15, Vector3.Zero(), scene);
             camera.attachControl(canvasRef.current, true);
@@ -135,258 +139,25 @@ const OwareGame = ({ challengeInfo }: {challengeInfo: Challenge}) => {
             camera.lowerAlphaLimit = Math.PI ;
             camera.upperAlphaLimit = -Math.PI / 2;
 
-            console.log(address)
-
-
-        
-
-            // if( address && formattedAddressCheck(challengeInfo.creator[1], address)){
-                 
-            // }else{
-            //     camera.upperAlphaLimit = -Math.PI / 2;
-            // }
-            
-            // rotate according to player
-
-            // Disable panning
             camera.panningSensibility = 0;
+
+            if (sceneRef.current) {
+                cleanupGameState();
+                setGameState(scene, camera)
+                
+            
+            }
+ 
+            sceneRef.current = scene;
+            
+  
 
             // Light
            let light =  new HemisphericLight("light", new Vector3(0, 1, 0), scene);
 
            light.intensity = 0.7
 
-        //    const check_player = toInvert()
-
-        //    const model_name = check_player ? 'board' : 'board_one'
-
-         
-            // Load the GLB model (game board)
-            SceneLoader.ImportMeshAsync("", "assets/", `board.glb`, scene).then((result) => {
-                const board = result.meshes[0];
-                board.position = new Vector3(0, 0, 0);
-                board.checkCollisions = true;
-
-                const scaleFactor = 1.5; // Adjust this value to scale the model
-                board.scaling = new Vector3(scaleFactor, scaleFactor, scaleFactor);
-
-                result.meshes.forEach((mesh) => {
-                    mesh.unfreezeWorldMatrix();
-                    mesh.checkCollisions = true;
-                    mesh.checkCollisions = true;
-                    updateBoundingInfo(mesh as Mesh);
-                    //addPhysicsAggregate(mesh);
-                    // Store meshes based on their names
-                    if (mesh.name === "board") {
-                        mesh.isPickable = false
-
-                        // Create a new StandardMaterial for the board
-                        const boardMaterial = new StandardMaterial("boardMaterial", scene);
-                        
-                        // Set the diffuse color to deep blue
-                        boardMaterial.diffuseColor = new Color3(0.2, 0, 0.4); // Very deep purple color
-                        
-
-                        // Apply the material to the board mesh
-                        mesh.material = boardMaterial;
-                                                    // If the above doesn't work, try coloring vertices directly
-
-
-                        gameMeshesRef.current.board = mesh;
-
-                        
-                    } else if (mesh.name.match(/^House\d+$/)) {
-                        // Create a new StandardMaterial for the board
-                        const boardMaterial = new StandardMaterial("boardMaterial", scene);
-                        // Set the diffuse color to deep blue
-                        boardMaterial.diffuseColor = new Color3(0.2, 0, 0.4); // Very deep purple color
-                        
-                        // Apply the material to the board mesh
-                        mesh.material = boardMaterial;
-                                                    // If the above doesn't work, try coloring vertices directly
-                        mesh.physicsImpostor = new PhysicsImpostor(mesh, PhysicsImpostor.MeshImpostor, { mass: 0, restitution: 0.1 }, scene);
-
-                        gameMeshesRef.current.houses.push(mesh);
-                        
-                    } else if (mesh.name.match(/^House\d+D$/)) {
-                        
-                        mesh.isPickable = false
-                        gameMeshesRef.current.houseDisplays.push(mesh);
-                    } else if (mesh.name === "player1" || mesh.name === "player2") {
-                        mesh.isPickable = false
-                        gameMeshesRef.current.playerNames[mesh.name] = mesh;
-
-                        const isCreator = address && typeof address === 'string' && formattedAddressCheck(challengeInfo.creator[1], address);
-                        const creatorName = challengeInfo.creator[0];
-                        const opponentName = challengeInfo.opponent[0];
-                    
-                        if (mesh.name === "player1") {
-                            updateNameDisplay(mesh, isCreator ? opponentName : creatorName);
-                        } else if (mesh.name === "player2") {
-                            updateNameDisplay(mesh, isCreator ? creatorName : opponentName);
-                        } else {
-                            console.warn(`Unexpected mesh name: ${mesh.name}`);
-                        }
-
-
-                    } else if (mesh.name === "display1" || mesh.name === "display2") {
-                        mesh.isPickable = false
-                        gameMeshesRef.current.playerTurnDisplays[mesh.name] = mesh;
-                    } else if (mesh.name === "captured1" || mesh.name === "captured2") {
-                        // Create a new StandardMaterial for the board
-                        const boardMaterial = new StandardMaterial("boardMaterial", scene);
-
-                        // Set the diffuse color to deep blue
-                        boardMaterial.diffuseColor = new Color3(0.2, 0, 0.4); // Very deep purple color
-                        
-                        // Apply the material to the board mesh
-                        mesh.material = boardMaterial;
-                                                    // If the above doesn't work, try coloring vertices directly
-                        mesh.isPickable = false
-
-
-
-
-                        gameMeshesRef.current.capturedHouses[mesh.name] = mesh;
-
-                    } else if (mesh.name === "Home1" || mesh.name === "Home2") {
-                        mesh.isPickable = false
-                        
-                        const isCreator = address && typeof address === 'string' && formattedAddressCheck(challengeInfo.creator[1], address);
-
-                        console.log()
-
-                    
-                        if (mesh.name === "Home1" && challengeInfo.player_one_captured) {
-                            updateHouseCapturedDisplay(mesh, isCreator ? challengeInfo.player_two_captured.captured.toString() : challengeInfo.player_one_captured.captured.toString());
-                        } else if (mesh.name === "Home2" &&  challengeInfo.player_one_captured) {
-                            updateHouseCapturedDisplay(mesh, isCreator ? challengeInfo.player_one_captured.captured.toString() : challengeInfo.player_two_captured.captured.toString());
-                        } else {
-                            console.warn(`Unexpected mesh name: ${mesh.name}`);
-                        }
-
-                        gameMeshesRef.current.capturedDisplays[mesh.name.toLowerCase() as keyof typeof gameMeshesRef.current.capturedDisplays] = mesh;
-
-
-                    } else {
-                        // Store any other meshes with their names as keys
-                        gameMeshesRef.current[mesh.name] = mesh;
-                    }
-                });
-
-                // Sort houses and houseDisplays arrays by their number
-                gameMeshesRef.current.houses.sort((a, b) => {
-                    const numA = parseInt(a.name.replace('House', ''));
-                    const numB = parseInt(b.name.replace('House', ''));
-                    return numA - numB;
-                });
-                gameMeshesRef.current.houseDisplays.sort((a, b) => {
-                    const numA = parseInt(a.name.replace('House', '').replace('D', ''));
-                    const numB = parseInt(b.name.replace('House', '').replace('D', ''));
-                    return numA - numB;
-                });
-
-                // Create seeds and update displays
-                createSeedsAndUpdateDisplays(challengeInfo.state);
-
-                // Set up house picking
-                setupHousePicking();
-
-                updatePlayerTurnDisplays(gameMeshesRef.current.playerTurnDisplays)
-
-
-
-                // Create an invisible sphere around the board to prevent camera from going through
-                const boundingSphere = MeshBuilder.CreateSphere("boundingSphere", {diameter: 30}, scene);
-                const invisibleMaterial = new StandardMaterial("invisibleMaterial", scene);
-                invisibleMaterial.alpha = 0;
-                boundingSphere.material = invisibleMaterial;
-                boundingSphere.isPickable = false;
-                boundingSphere.checkCollisions = true;
-
-                // Use the bounding sphere to limit camera movement
-                camera.setTarget(boundingSphere);
-            });
-
-                        // Define challenge types
-            const challengeTypes = [
-                { label: 'User vs User', value: 1 },
-                { label: 'User vs AI', value: 2 },
-                { label: 'AI vs AI', value: 3 },
-            ];
-            
-            // Function to get challenge type label
-            const getChallengeTypeLabel = (value: number): string => {
-                const challengeType = challengeTypes.find(type => type.value === value);
-                return challengeType ? challengeType.label : 'Unknown';
-            };
-
-            
-            // Create GUI
-            const advancedTexture = AdvancedDynamicTexture.CreateFullscreenUI("UI");
-
-            // Challenge Info Panel
-            const panel = new StackPanel();
-            panel.width = "200px";
-            panel.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_LEFT;
-            panel.verticalAlignment = Control.VERTICAL_ALIGNMENT_TOP;
-            advancedTexture.addControl(panel);
-
-            const addInfoText = (text: string, emoji: string) => {
-                const textBlock = new TextBlock();
-                textBlock.text = `${emoji} ${text}`;
-                textBlock.color = "white";
-                textBlock.fontSize = 14;
-                textBlock.height = "30px";
-                panel.addControl(textBlock);
-            };
-
-            // Add challenge info to the panel
-            addInfoText(`${challengeInfo.challenge_id}`, "Challenge 🆔: ");
-            addInfoText(`${challengeInfo.creator[0]}`, "Creator 👤: ");
-            addInfoText(`${challengeInfo.rounds}`, "Rounds 🔄: ");
-            addInfoText(`${getChallengeTypeLabel(challengeInfo.challenge_type)}`, "C Type 🏆: ");
-            addInfoText(`${challengeInfo.current_round}`, "Round📍: ");
-
-            // Player Info
-            const playerInfoPanel = new StackPanel();
-            playerInfoPanel.width = "200px";
-            playerInfoPanel.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_RIGHT;
-            playerInfoPanel.verticalAlignment = Control.VERTICAL_ALIGNMENT_TOP;
-            advancedTexture.addControl(playerInfoPanel);
-
-            const addPlayerInfoText = (text: string, emoji: string) => {
-                const textBlock = new TextBlock();
-                textBlock.text = `${emoji} ${text}`;
-                textBlock.color = "white";
-                textBlock.fontSize = 14;
-                textBlock.height = "30px";
-                playerInfoPanel.addControl(textBlock);
-            };
-
-            addPlayerInfoText(`Player 1: ${challengeInfo.creator[0] ? challengeInfo.creator[0] : 'Waiting...'}`, "🎮");
-            addPlayerInfoText(`Player 2: ${challengeInfo.opponent[0] ? challengeInfo.opponent[0] : 'Waiting...'}`, "🎮");
-            addPlayerInfoText(`Status: ${challengeInfo.in_progress ? "Game in Progress" : "Waiting for Players"}`, "🚦");
-
-            // Game Info
-            const gameInfoPanel = new StackPanel();
-            gameInfoPanel.width = "100%";
-            gameInfoPanel.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_CENTER;
-            gameInfoPanel.verticalAlignment = Control.VERTICAL_ALIGNMENT_BOTTOM;
-            advancedTexture.addControl(gameInfoPanel);
-
-            gameInfoPanelRef.current = gameInfoPanel;
-
-            async function updateLogsFromFetch() {
-                const notices = await fetchAndProcessNotices();
-                if (gameInfoPanelRef.current) {
-                  prepareLogs(notices, gameInfoPanelRef.current);
-                }
-              }
-
-            updateLogsFromFetch()
-
-
+        
             engine.runRenderLoop(() => {
                 scene.render();
             });
@@ -403,6 +174,310 @@ const OwareGame = ({ challengeInfo }: {challengeInfo: Challenge}) => {
             };
         }
     }, [challengeInfo]);
+
+
+    const setGameState = (scene: Scene, camera: any) => {
+
+                    // Load the GLB model (game board)
+                    SceneLoader.ImportMeshAsync("", "assets/", `board.glb`, scene).then((result) => {
+                        const board = result.meshes[0];
+                        board.position = new Vector3(0, 0, 0);
+                        board.checkCollisions = true;
+        
+                        const scaleFactor = 1.5; // Adjust this value to scale the model
+                        board.scaling = new Vector3(scaleFactor, scaleFactor, scaleFactor);
+        
+                        result.meshes.forEach((mesh) => {
+                            mesh.unfreezeWorldMatrix();
+                            mesh.checkCollisions = true;
+                            mesh.checkCollisions = true;
+                            updateBoundingInfo(mesh as Mesh);
+                            //addPhysicsAggregate(mesh);
+                            // Store meshes based on their names
+                            if (mesh.name === "board") {
+                                mesh.isPickable = false
+        
+                                // Create a new StandardMaterial for the board
+                                const boardMaterial = new StandardMaterial("boardMaterial", scene);
+                                
+                                // Set the diffuse color to deep blue
+                                boardMaterial.diffuseColor = new Color3(0.2, 0, 0.4); // Very deep purple color
+                                
+        
+                                // Apply the material to the board mesh
+                                mesh.material = boardMaterial;
+                                                            // If the above doesn't work, try coloring vertices directly
+        
+        
+                                gameMeshesRef.current.board = mesh;
+        
+                                
+                            } else if (mesh.name.match(/^House\d+$/)) {
+                                // Create a new StandardMaterial for the board
+                                const boardMaterial = new StandardMaterial("boardMaterial", scene);
+                                // Set the diffuse color to deep blue
+                                boardMaterial.diffuseColor = new Color3(0.2, 0, 0.4); // Very deep purple color
+                                
+                                // Apply the material to the board mesh
+                                mesh.material = boardMaterial;
+                                                            // If the above doesn't work, try coloring vertices directly
+                                mesh.physicsImpostor = new PhysicsImpostor(mesh, PhysicsImpostor.MeshImpostor, { mass: 0, restitution: 0.1 }, scene);
+        
+                                gameMeshesRef.current.houses.push(mesh);
+                                
+                            } else if (mesh.name.match(/^House\d+D$/)) {
+                                
+                                mesh.isPickable = false
+                                gameMeshesRef.current.houseDisplays.push(mesh);
+                            } else if (mesh.name === "player1" || mesh.name === "player2") {
+                                mesh.isPickable = false
+                                gameMeshesRef.current.playerNames[mesh.name] = mesh;
+        
+                                const isPlayerScreenOwner1 = address && formattedAddressCheck(challengeInfo.player_one_captured.address, address);
+
+                                function getPlayerName(isPlayer1: boolean | undefined) {
+                                    return isPlayer1 ? challengeInfo.player_one_captured.name : challengeInfo.player_two_captured.name;
+                                }
+                                
+                                function updatePlayerNameDisplay(mesh: AbstractMesh, isClosestToScreen: boolean) {
+                                    const screenOwnerName = getPlayerName(isPlayerScreenOwner1);
+                                    const opponentName = getPlayerName(!isPlayerScreenOwner1);
+                                    const nameToDisplay = isClosestToScreen ? screenOwnerName : opponentName;
+                                    updateNameDisplay(mesh, nameToDisplay);
+                                }
+                                
+                                if (mesh.name === "player1" || mesh.name === "player2") {
+                                    updatePlayerNameDisplay(mesh, mesh.name === "player2");
+                                } else {
+                                    console.warn(`Unexpected mesh name: ${mesh.name}`);
+                                }
+        
+        
+                            } else if (mesh.name === "display1" || mesh.name === "display2") {
+                                mesh.isPickable = false
+                                gameMeshesRef.current.playerTurnDisplays[mesh.name] = mesh;
+                            } else if (mesh.name === "captured1" || mesh.name === "captured2") {
+                                // Create a new StandardMaterial for the board
+                                const boardMaterial = new StandardMaterial("boardMaterial", scene);
+        
+                                // Set the diffuse color to deep blue
+                                boardMaterial.diffuseColor = new Color3(0.2, 0, 0.4); // Very deep purple color
+                                
+                                // Apply the material to the board mesh
+                                mesh.material = boardMaterial;
+                                                            // If the above doesn't work, try coloring vertices directly
+                                mesh.isPickable = false
+                                const isPlayerScreenOwner1 = address && formattedAddressCheck(challengeInfo.player_one_captured.address, address);
+
+                                function getPlayerCaptured(isPlayer1: boolean | undefined) {
+                                    return isPlayer1 ? challengeInfo.player_one_captured.captured : challengeInfo.player_two_captured.captured;
+                                }
+        
+                                function updatePlayerCapturedDisplay(mesh: AbstractMesh, isClosestToScreen: boolean) {
+                                    const screenOwnerCaptured = getPlayerCaptured(isPlayerScreenOwner1);
+                                    const opponentCaptured = getPlayerCaptured(!isPlayerScreenOwner1);
+                                    const capturedToDisplay = isClosestToScreen ? screenOwnerCaptured : opponentCaptured;
+
+                                    if (capturedToDisplay > 0){
+                                        for (let i = 0; i < capturedToDisplay; i++) {
+                                            addSphereInsideMesh(mesh,`Captured${sphere_count}`,sphere_count,true,false);
+                                            sphere_count += 1
+                                         }
+                                        
+                                    }
+                                }
+                                
+                                if (mesh.name === "captured1" || mesh.name === "captured2") {
+                                    updatePlayerCapturedDisplay(mesh, mesh.name === "captured2");
+                                } else {
+                                    console.warn(`Unexpected mesh name: ${mesh.name}`);
+                                }
+                        
+        
+        
+                                gameMeshesRef.current.capturedHouses[mesh.name] = mesh;
+        
+                            } else if (mesh.name === "Home1" || mesh.name === "Home2") {
+                                mesh.isPickable = false
+
+                                const isPlayerScreenOwner1 = address && formattedAddressCheck(challengeInfo.player_one_captured.address, address);
+
+                                function getPlayerData(isPlayer1: boolean | undefined) {
+                                    return isPlayer1 ? challengeInfo.player_one_captured : challengeInfo.player_two_captured;
+                                }
+                                
+                                function updateHomeDisplay(mesh: AbstractMesh, isOwnHome: boolean) {
+                                    const playerData = getPlayerData(isPlayerScreenOwner1);
+                                    const opponentData = getPlayerData(!isPlayerScreenOwner1);
+                                    const dataToDisplay = isOwnHome ? playerData : opponentData;
+                                    updateHouseCapturedDisplay(mesh, dataToDisplay.captured.toString());
+                                }
+                                
+                                if (mesh.name === "Home1" || mesh.name === "Home2") {
+                                    updateHomeDisplay(mesh, mesh.name === "Home2");
+                                } else {
+                                    console.warn(`Unexpected mesh name: ${mesh.name}`);
+                                }
+        
+                                gameMeshesRef.current.capturedDisplays[mesh.name.toLowerCase() as keyof typeof gameMeshesRef.current.capturedDisplays] = mesh;
+        
+        
+                            } else {
+                                // Store any other meshes with their names as keys
+                                gameMeshesRef.current[mesh.name] = mesh;
+                            }
+                        });
+        
+                        // Sort houses and houseDisplays arrays by their number
+                        gameMeshesRef.current.houses.sort((a, b) => {
+                            const numA = parseInt(a.name.replace('House', ''));
+                            const numB = parseInt(b.name.replace('House', ''));
+                            return numA - numB;
+                        });
+                        gameMeshesRef.current.houseDisplays.sort((a, b) => {
+                            const numA = parseInt(a.name.replace('House', '').replace('D', ''));
+                            const numB = parseInt(b.name.replace('House', '').replace('D', ''));
+                            return numA - numB;
+                        });
+        
+                        // Create seeds and update displays
+                        createSeedsAndUpdateDisplays(challengeInfo.state);
+        
+                        // Set up house picking
+                        setupHousePicking();
+        
+                        updatePlayerTurnDisplays(gameMeshesRef.current.playerTurnDisplays)
+        
+        
+        
+                        // Create an invisible sphere around the board to prevent camera from going through
+                        const boundingSphere = MeshBuilder.CreateSphere("boundingSphere", {diameter: 30}, scene);
+                        const invisibleMaterial = new StandardMaterial("invisibleMaterial", scene);
+                        invisibleMaterial.alpha = 0;
+                        boundingSphere.material = invisibleMaterial;
+                        boundingSphere.isPickable = false;
+                        boundingSphere.checkCollisions = true;
+        
+                        // Use the bounding sphere to limit camera movement
+                        camera.setTarget(boundingSphere);
+                    });
+        
+                                // Define challenge types
+                    const challengeTypes = [
+                        { label: 'User vs User', value: 1 },
+                        { label: 'User vs AI', value: 2 },
+                        { label: 'AI vs AI', value: 3 },
+                    ];
+                    
+                    // Function to get challenge type label
+                    const getChallengeTypeLabel = (value: number): string => {
+                        const challengeType = challengeTypes.find(type => type.value === value);
+                        return challengeType ? challengeType.label : 'Unknown';
+                    };
+        
+                    
+                    // Create GUI
+                    const advancedTexture = AdvancedDynamicTexture.CreateFullscreenUI("UI");
+        
+                    // Challenge Info Panel
+                    const panel = new StackPanel();
+                    panel.width = "200px";
+                    panel.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_LEFT;
+                    panel.verticalAlignment = Control.VERTICAL_ALIGNMENT_TOP;
+                    advancedTexture.addControl(panel);
+        
+                    const addInfoText = (text: string, emoji: string) => {
+                        const textBlock = new TextBlock();
+                        textBlock.text = `${emoji} ${text}`;
+                        textBlock.color = "white";
+                        textBlock.fontSize = 14;
+                        textBlock.height = "30px";
+                        panel.addControl(textBlock);
+                    };
+        
+                    // Add challenge info to the panel
+                    addInfoText(`${challengeInfo.challenge_id}`, "Challenge 🆔: ");
+                    addInfoText(`${challengeInfo.creator[0]}`, "Creator 👤: ");
+                    addInfoText(`${challengeInfo.rounds}`, "Rounds 🔄: ");
+                    addInfoText(`${getChallengeTypeLabel(challengeInfo.challenge_type)}`, "C Type 🏆: ");
+                    addInfoText(`${challengeInfo.current_round}`, "Round📍: ");
+        
+                    // Player Info
+                    const playerInfoPanel = new StackPanel();
+                    playerInfoPanel.width = "200px";
+                    playerInfoPanel.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_RIGHT;
+                    playerInfoPanel.verticalAlignment = Control.VERTICAL_ALIGNMENT_TOP;
+                    advancedTexture.addControl(playerInfoPanel);
+        
+                    const addPlayerInfoText = (text: string, emoji: string) => {
+                        const textBlock = new TextBlock();
+                        textBlock.text = `${emoji} ${text}`;
+                        textBlock.color = "white";
+                        textBlock.fontSize = 14;
+                        textBlock.height = "30px";
+                        playerInfoPanel.addControl(textBlock);
+                    };
+        
+                    addPlayerInfoText(`Player 1: ${challengeInfo.creator[0] ? challengeInfo.creator[0] : 'Waiting...'}`, "🎮");
+                    addPlayerInfoText(`Player 2: ${challengeInfo.opponent[0] ? challengeInfo.opponent[0] : 'Waiting...'}`, "🎮");
+                    addPlayerInfoText(`Status: ${challengeInfo.in_progress ? "Game in Progress" : "Waiting for Players"}`, "🚦");
+        
+                    // Game Info
+                    const gameInfoPanel = new StackPanel();
+                    gameInfoPanel.width = "100%";
+                    gameInfoPanel.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_CENTER;
+                    gameInfoPanel.verticalAlignment = Control.VERTICAL_ALIGNMENT_BOTTOM;
+                    advancedTexture.addControl(gameInfoPanel);
+        
+                    gameInfoPanelRef.current = gameInfoPanel;
+        
+                    async function updateLogsFromFetch() {
+                        const notices = await fetchAndProcessNotices();
+                        if (gameInfoPanelRef.current) {
+                          prepareLogs(notices, gameInfoPanelRef.current);
+                        }
+                      }
+        
+                    updateLogsFromFetch()
+
+    }
+
+    
+  const cleanupGameState = () => {
+    // Dispose of all meshes
+    Object.values(gameMeshesRef.current).forEach(mesh => {
+      if (Array.isArray(mesh)) {
+        mesh.forEach(m => m?.dispose());
+      } else if (mesh instanceof Mesh) {
+        mesh.dispose();
+      }
+    });
+
+    // Reset gameMeshesRef
+    gameMeshesRef.current = {
+      board: null,
+      houses: [],
+      houseDisplays: [],
+      playerNames: { player1: null, player2: null },
+      playerTurnDisplays: { display1: null, display2: null },
+      capturedHouses: { captured1: null, captured2: null },
+      capturedDisplays: { home1: null, home2: null },
+    };
+
+    // Dispose of highlighted house material
+    if (originalMaterialRef.current) {
+      originalMaterialRef.current.dispose();
+      originalMaterialRef.current = null;
+    }
+
+    // Clear game info panel
+    if (gameInfoPanelRef.current) {
+      gameInfoPanelRef.current.dispose();
+      gameInfoPanelRef.current = null;
+    }
+
+    highlightedHouseRef.current = null;
+  };
 
     const updateBoundingInfo = (mesh: Mesh) => {
         if (mesh.geometry) {
@@ -433,38 +508,36 @@ const OwareGame = ({ challengeInfo }: {challengeInfo: Challenge}) => {
     const createSeedsAndUpdateDisplays = (state: number[]) => {
         if (!sceneRef.current) return;
 
-        const isScreenOwner = address && formattedAddressCheck(challengeInfo.player_turn.address, address);
+        const playerOne = challengeInfo.player_one_captured.address 
 
-        const HouseName1 = `House${1}`;
-        const HouseName7 = `House${7}`;
+        const isPlayerScreemOwner1 = address && formattedAddressCheck(challengeInfo.player_one_captured.address, address);
+        const isPlayerScreemOwner2 = address && formattedAddressCheck(challengeInfo.player_two_captured.address, address);
 
-        const isPlayersHouse1 = challengeInfo.player_turn.houses.includes(HouseName1);
-        const isPlayersHouse7 = challengeInfo.player_turn.houses.includes(HouseName7);
 
-        console.log(isPlayersHouse1,isPlayersHouse7)
-
-        console.log(challengeInfo.player_turn.houses)
 
         let new_seed_state;
 
-        if(isPlayersHouse1 && isScreenOwner){
-            let statePartOne = state.slice(1, 6);
+        if(isPlayerScreemOwner1){
+           
+            let statePartOne = state.slice(0, 6);
             let statePartTwo = state.slice(6,12);
 
             new_seed_state = [...statePartTwo.reverse(), ...statePartOne.reverse()]
 
-        }else if(isPlayersHouse7){
+        }
+        else if(isPlayerScreemOwner2){
             let statePartOne = state.slice(0, 6);
             let statePartTwo = state.slice(6,12);
 
             new_seed_state = [...statePartOne.reverse(), ...statePartTwo.reverse()]
 
         }
-        
-        
-        
+
         else{
-            new_seed_state = state
+            let statePartOne = state.slice(0, 6);
+            let statePartTwo = state.slice(6,12);
+
+            new_seed_state = [...statePartOne.reverse(), ...statePartTwo.reverse()]
         }
 
         console.log(gameMeshesRef.current.houses)
@@ -906,6 +979,12 @@ const OwareGame = ({ challengeInfo }: {challengeInfo: Challenge}) => {
         }
     };
 
+    useEffect(() => {
+        if (challenge) {
+
+          setChallengeInfo(challenge);
+        }
+      }, [challenge]);
 
     function addPhysicsAggregate(meshe: TransformNode) {
         const res = new PhysicsAggregate(
@@ -956,8 +1035,13 @@ const OwareGame = ({ challengeInfo }: {challengeInfo: Challenge}) => {
                 }
               }
 
-              await updateLogsFromFetch()
+              await updateLogsFromFetch();
 
+              await new Promise(resolve => setTimeout(resolve, 5000));
+
+              await refetch();
+
+              const stopPolling = startPolling();
              
               // Additional success handling (e.g., reset form, close modal, etc.)
             } else {
@@ -1035,6 +1119,55 @@ const OwareGame = ({ challengeInfo }: {challengeInfo: Challenge}) => {
           return [];
         }
       }
+
+      const startPolling = (intervalMs = 5000) => {
+        let intervalId: NodeJS.Timeout | null = null;
+      
+        const pollForMove = () => {
+          inspect(JSON.stringify({
+            method: "get_challenge",
+            challenge_id: parseInt(challengeInfo.challenge_id)
+          }))
+            .then(result => {
+              try {
+                const challengeResults = JSON.parse(hexToString(result[0].payload))["challenge"];
+                console.log("results: ", challengeResults);
+                return challengeResults;
+              } catch (e) {
+                console.error("Error parsing results: ", e);
+                throw e;
+              }
+            })
+            .then(challengeResults => {
+              if (challengeResults[0].player_turn.address !== challengeInfo.player_turn.address) {
+                console.log("Other player has made a move!");
+                if (intervalId !== null) {
+                    clearInterval(intervalId);
+                    intervalId = null;
+                  }  // Stop polling
+                return refetch().then(() => {
+                  // Optionally, you can emit an event or call a callback here
+                  console.log("Game state updated after move detected");
+                });
+              }
+            })
+            .catch(error => {
+              console.error("Error in pollForMove: ", error);
+            });
+        };
+      
+        // Start polling and save the interval ID
+        intervalId = setInterval(pollForMove, intervalMs);
+      
+        // Return a function to manually stop polling if needed
+        return () => {
+          if (intervalId) {
+            clearInterval(intervalId);
+            intervalId = null;
+          }
+        };
+      };
+      
 
 
     return (

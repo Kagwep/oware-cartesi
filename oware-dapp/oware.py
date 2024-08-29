@@ -202,7 +202,7 @@ def get_round_fixture(payload):
 
 def get_challenge(payload):
 
-    output = store.get_challenge(payload)
+    output = store.get_challenge_client(payload)
 
     if output["success"]:
         add_report(output["result"])

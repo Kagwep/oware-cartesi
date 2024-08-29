@@ -81,7 +81,7 @@ export default function Challenges() {
         // Additional success handling (e.g., reset form, close modal, etc.)
 
           // Wait for 20 seconds
-        await new Promise(resolve => setTimeout(resolve, 20000));
+        await new Promise(resolve => setTimeout(resolve, 5000));
 
 
         await fetchChallenges()
@@ -117,7 +117,7 @@ export default function Challenges() {
         <Button variant="outline" colorScheme="green" onClick={handleClick}>
           Create new
         </Button>
-        <ChallengeFormModal isOpen={isOpen} onClose={() => setIsOpen(false)}/>
+        <ChallengeFormModal isOpen={isOpen} onClose={() => setIsOpen(false)} fetchChallenges={fetchChallenges}/>
       </Stack>
       <ListChallenges challenges={challenges} onJoinChallenge={handleJoinChallenge} fetchChallenges={fetchChallenges} />
     </Stack>

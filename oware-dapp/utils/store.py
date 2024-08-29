@@ -530,7 +530,7 @@ class Store:
 
         return output
     
-    def get_challenge(self,payload_data):
+    def get_challenge_client(self,payload_data):
 
         challenge_id = payload_data.get("challenge_id")
 
@@ -540,13 +540,14 @@ class Store:
                 "error": "Challenge ID is required"
             }
         
+        challenge = self.challenges.get(challenge_id)
+        
         if not challenge:
             return {
                 "success": False,
                 "error": "Challenge not found"
             }
-            
-        challenge = self.challenges.get(challenge_id)
+        
 
         challenge_list = []
 
@@ -568,7 +569,7 @@ class Store:
             })
 
         
-        output = json.dumps({"challenges": challenge_list})
+        output = json.dumps({"challenge": challenge_list})
 
         return {
                 "success": True,
