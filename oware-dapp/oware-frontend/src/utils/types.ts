@@ -4,8 +4,9 @@ export interface Challenge {
     opponent: string
     in_progress:boolean,
     game_ended: boolean,
-    winner: string,
+    winner: PlayerTwo,
     rounds:number,
+    round_winners: RoundWinners,
     current_round:number
     created_at:number,
     challenge_type: number,
@@ -61,3 +62,7 @@ export type Notice = {
   export type GraphQLResponse<T> = {
     data: T;
   };
+
+  export interface RoundWinners {
+    [key: number] : PlayerTwo
+  }

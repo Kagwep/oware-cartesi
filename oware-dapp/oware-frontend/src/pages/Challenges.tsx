@@ -105,6 +105,59 @@ export default function Challenges() {
 
   };
 
+  const handleAddOpponentChallenge = async(dataToSend: any) => {
+    // Logic to join the challenge (e.g., API call)
+    console.log(`Adding opponent with ID: ${dataToSend.challenge_id}`);
+
+    const toastId = uuidv4();
+
+    toast({
+      id: toastId,
+      title: "Adding opponent to challenge",
+      description: "Please wait...",
+      status: "info",
+      duration: null,
+      isClosable: true,
+    });
+
+
+    try {
+      const result = await sendInput(JSON.stringify(dataToSend), writeContractAsync);
+      if (result.success) {
+
+        toast.update(toastId, {
+          title: "Opponent added",
+          description: "You have successfully added your opponent.",
+          status: "success",
+          duration: 5000,
+          isClosable: true,
+        });
+        // Additional success handling (e.g., reset form, close modal, etc.)
+
+          // Wait for 20 seconds
+        await new Promise(resolve => setTimeout(resolve, 5000));
+
+
+        await fetchChallenges()
+
+      } else {
+        throw new Error("Failed to add opponent");
+      }
+    } catch (error) {
+      console.error("Error ading opponent:", error);
+      toast.update(toastId, {
+        title: "Error",
+        description: "Failed to add opponent. Please try again.",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
+      // Additional error handling if needed
+    }
+
+    
+
+  };
 
 
   
@@ -119,7 +172,7 @@ export default function Challenges() {
         </Button>
         <ChallengeFormModal isOpen={isOpen} onClose={() => setIsOpen(false)} fetchChallenges={fetchChallenges}/>
       </Stack>
-      <ListChallenges challenges={challenges} onJoinChallenge={handleJoinChallenge} fetchChallenges={fetchChallenges} />
+      <ListChallenges challenges={challenges} onJoinChallenge={handleJoinChallenge} fetchChallenges={fetchChallenges} onAddOpponentChallenge={handleAddOpponentChallenge} />
     </Stack>
   );
 }

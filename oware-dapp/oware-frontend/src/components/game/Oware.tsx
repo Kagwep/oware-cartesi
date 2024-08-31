@@ -31,7 +31,7 @@ import {
   CreateTextShapePaths,
   Texture
 } from "@babylonjs/core"
-import { AdvancedDynamicTexture, Control, StackPanel, TextBlock } from '@babylonjs/gui/2D';
+import { AdvancedDynamicTexture, Button, Control, InputText, Rectangle, StackPanel, TextBlock } from '@babylonjs/gui/2D';
 import "@babylonjs/loaders/glTF";
 import { Challenge } from '../../utils/types';
 import * as CANNON from 'cannon';
@@ -46,6 +46,7 @@ import { NOTICES_QUERY } from '../../utils/query';
 import { hexToString } from 'viem';
 import sphereTexture from "../../../assets/nuttexture3.avif";
 import { useChallenge } from '../../hooks/useChallenges';
+import { useNavigate } from 'react-router-dom';
 
 BabylonFileLoaderConfiguration.LoaderInjectedPhysicsEngine = CANNON ;
 window.CANNON = CANNON;
@@ -80,8 +81,11 @@ const OwareGame = ({ initialChallengeInfo }: {initialChallengeInfo: Challenge}) 
 
     const [challengeInfo, setChallengeInfo] = useState<Challenge>(initialChallengeInfo);
     const { challenge, isLoading, error, refetch } = useChallenge(challengeInfo.challenge_id);
+    const [isPolling, setIsPolling] = useState(false);
 
     const canvasRef = useRef(null);
+
+    const navigate = useNavigate();
 
     const toast = useToast();
 
@@ -103,7 +107,9 @@ const OwareGame = ({ initialChallengeInfo }: {initialChallengeInfo: Challenge}) 
       const highlightedHouseRef = useRef<number | null>(null);
       const originalMaterialRef = useRef<StandardMaterial | null>(null);
       const gameInfoPanelRef = useRef<StackPanel| null>(null);
-
+      const guiContainerRef = useRef<Rectangle| null>(null);
+      const statusTextRef = useRef<TextBlock | null>(null);
+      const advancedTextureRef = useRef<AdvancedDynamicTexture| null>(null);
       const addedSpheres: Mesh[] = [];
       const capturedSpheres: Mesh[] = [];
 
@@ -156,6 +162,12 @@ const OwareGame = ({ initialChallengeInfo }: {initialChallengeInfo: Challenge}) 
            let light =  new HemisphericLight("light", new Vector3(0, 1, 0), scene);
 
            light.intensity = 0.7
+
+       
+
+           
+
+
 
         
             engine.runRenderLoop(() => {
@@ -385,6 +397,8 @@ const OwareGame = ({ initialChallengeInfo }: {initialChallengeInfo: Challenge}) 
                     panel.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_LEFT;
                     panel.verticalAlignment = Control.VERTICAL_ALIGNMENT_TOP;
                     advancedTexture.addControl(panel);
+
+                    advancedTextureRef.current = advancedTexture;
         
                     const addInfoText = (text: string, emoji: string) => {
                         const textBlock = new TextBlock();
@@ -1041,8 +1055,8 @@ const OwareGame = ({ initialChallengeInfo }: {initialChallengeInfo: Challenge}) 
 
               await refetch();
 
-              const stopPolling = startPolling();
-             
+    
+              startPolling();
               // Additional success handling (e.g., reset form, close modal, etc.)
             } else {
               throw new Error("Failed to make move");
@@ -1072,7 +1086,6 @@ const OwareGame = ({ initialChallengeInfo }: {initialChallengeInfo: Challenge}) 
 
     function prepareLogs(logs: any[],gameInfoPanel: StackPanel,maxLogs: number = 5){
         gameInfoPanel.clearControls();
-
 
         const logText = new TextBlock();
         logText.color = "orange";
@@ -1120,10 +1133,54 @@ const OwareGame = ({ initialChallengeInfo }: {initialChallengeInfo: Challenge}) 
         }
       }
 
-      const startPolling = (intervalMs = 5000) => {
+      // clean up needed
+      const startPolling = (intervalMs = 15000) => {
         let intervalId: NodeJS.Timeout | null = null;
+        const currentPlayerAddress = address;
       
         const pollForMove = () => {
+          // Check if it's the current player's turn
+          if (challengeInfo.player_turn.address === currentPlayerAddress) {
+            console.log("It's your turn. Stopping polling.");
+            if (intervalId !== null) {
+              clearInterval(intervalId);
+              intervalId = null;
+              setIsPolling(false);
+            }
+            inspect(JSON.stringify({
+              method: "get_challenge",
+              challenge_id: parseInt(challengeInfo.challenge_id)
+            }))
+              .then(result => {
+                try {
+                  const challengeResults = JSON.parse(hexToString(result[0].payload))["challenge"];
+                  console.log("results: ", challengeResults);
+                  return challengeResults;
+                } catch (e) {
+                  console.error("Error parsing results: ", e);
+                  throw e;
+                }
+              })
+              .then(challengeResults => {
+  
+                const player  = (currentPlayerAddress &&  (challengeResults[0].player_turn.address).toLowerCase() !== currentPlayerAddress.toLowerCase())
+                if (player) {
+                  return refetch().then(() => {
+                    console.log("Game state updated after move detected");
+                    if (challengeInfo.current_round < challengeResults.current_round){
+                      updateRoundWinner(challengeResults, currentPlayerAddress)
+                    }else{
+                      updateWinner(challengeResults,currentPlayerAddress);
+                    }
+                  });
+                }
+              })
+              .catch(error => {
+                console.error("Error in pollForMove: ", error);
+              });
+            return;
+          }
+      
           inspect(JSON.stringify({
             method: "get_challenge",
             challenge_id: parseInt(challengeInfo.challenge_id)
@@ -1139,15 +1196,23 @@ const OwareGame = ({ initialChallengeInfo }: {initialChallengeInfo: Challenge}) 
               }
             })
             .then(challengeResults => {
-              if (challengeResults[0].player_turn.address !== challengeInfo.player_turn.address) {
-                console.log("Other player has made a move!");
+
+              const player  = (currentPlayerAddress &&  (challengeResults[0].player_turn.address).toLowerCase() === currentPlayerAddress.toLowerCase())
+              if (player) {
+                console.log("It's now your turn!");
+                setIsPolling(false);
                 if (intervalId !== null) {
-                    clearInterval(intervalId);
-                    intervalId = null;
-                  }  // Stop polling
+                  clearInterval(intervalId);
+                  intervalId = null;
+                }
                 return refetch().then(() => {
-                  // Optionally, you can emit an event or call a callback here
                   console.log("Game state updated after move detected");
+                  if (challengeInfo.current_round < challengeResults.current_round){
+                    updateRoundWinner(challengeResults, currentPlayerAddress)
+                  }else{
+                    updateWinner(challengeResults,currentPlayerAddress);
+                  }
+                  
                 });
               }
             })
@@ -1156,20 +1221,161 @@ const OwareGame = ({ initialChallengeInfo }: {initialChallengeInfo: Challenge}) 
             });
         };
       
-        // Start polling and save the interval ID
-        intervalId = setInterval(pollForMove, intervalMs);
-      
-        // Return a function to manually stop polling if needed
-        return () => {
-          if (intervalId) {
-            clearInterval(intervalId);
-            intervalId = null;
+        // Function to start polling
+        const startPollingIfNeeded = () => {
+          if (challengeInfo.player_turn && challengeInfo.player_turn.address !== currentPlayerAddress && !intervalId) {
+            console.log("Starting to poll for opponent's move");
+            setIsPolling(true);
+            intervalId = setInterval(pollForMove, intervalMs);
           }
         };
+      
+        // Initial check and start polling if needed
+        startPollingIfNeeded();
+      
+        // Return an object with functions to manually control polling
+        return {
+          stop: () => {
+            if (intervalId) {
+              clearInterval(intervalId);
+              intervalId = null;
+            }
+          },
+          start: startPollingIfNeeded
+        };
       };
+
+      const updateWinner = (challengeResults: Challenge, currentPlayerAddress: string) => {
+        if (sceneRef.current && advancedTextureRef.current && statusTextRef.current) {
+          if (challengeResults.winner) {
+            const isCurrentPlayerWinner = challengeResults.winner.address.toLowerCase() === currentPlayerAddress.toLowerCase();
+            
+            if (isCurrentPlayerWinner) {
+              createWinPanel(sceneRef.current, advancedTextureRef.current);
+              statusTextRef.current.text = "🏆 Congratulations! You won! 🎉";
+            } else {
+              createWinPanel(sceneRef.current, advancedTextureRef.current);
+              statusTextRef.current.text = "😔 Sorry, you lost. Better luck next time! 🍀";
+            }
+          } else if (!challengeResults.winner && challengeResults.game_ended) {
+            statusTextRef.current.text =  "🤝 The challenge ended in a draw! 🔄";
+          }
+        }
+      };
+
+      const updateRoundWinner = (challengeResults: Challenge, currentPlayerAddress: string) => {
+        if (sceneRef.current && advancedTextureRef.current && statusTextRef.current) {
+
+          if (!challengeResults.winner  && challengeResults.round_winners[challengeInfo.current_round]) {
+
+            const isCurrentPlayerWinner = challengeResults.round_winners[challengeInfo.current_round].address.toLocaleLowerCase() === currentPlayerAddress.toLowerCase();
+            
+            if (isCurrentPlayerWinner) {
+              createWinPanel(sceneRef.current, advancedTextureRef.current, true);
+              statusTextRef.current.text = `🏆 Congratulations! You won round ${challengeInfo.current_round}! 🎉🎉`;
+            } else {
+              createWinPanel(sceneRef.current, advancedTextureRef.current,true);
+              statusTextRef.current.text = `😔 Sorry, you lost round ${challengeInfo.current_round}. Better luck next round! 🍀`;
+            }
+          } else if (!challengeResults.winner  && !challengeResults.round_winners[challengeInfo.current_round]) {
+            statusTextRef.current.text = "🤝 The round ended in a draw. 🔄";
+          }
+        }
+      };
+
+      function createWinPanel(scene: Scene,advancedTexture : AdvancedDynamicTexture, round: boolean = false) {
+        // Container
+        const guiContainer = new Rectangle();
+        guiContainer.alpha = 0.9;
+        guiContainer.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_CENTER
+        guiContainer.verticalAlignment = Control.VERTICAL_ALIGNMENT_CENTER
+        guiContainer.width = "400px";
+        guiContainer.height = "250px";
+        guiContainer.cornerRadius = 20;
+        guiContainer.left = "20px";
+        guiContainer.top = "-20px";
+        guiContainer.color = "white";
+        guiContainer.thickness = 0;
+        guiContainer.background = "black";
+        guiContainer.name = "guicontainer"
+        guiContainer.alpha = 0.5;
+        advancedTexture.addControl(guiContainer);
+    
+        guiContainerRef.current = guiContainer;
+    
+        // name panel
+        const namePanel = new StackPanel();
+        namePanel.verticalAlignment =
+            Control.VERTICAL_ALIGNMENT_BOTTOM;
+        namePanel.horizontalAlignment =
+            Control.HORIZONTAL_ALIGNMENT_LEFT;
+        namePanel.top = -45;
+        namePanel.left = 0;
+        namePanel.name = "namePanel"
+        guiContainer.addControl(namePanel);
+    
+
+        const statusText = new TextBlock()
+        statusText.height = "70px"
+        statusText.color = "white"
+        statusText.fontSize = 14 // Reduced font size
+        statusText.textWrapping = true // Enable text wrapping
+        statusText.resizeToFit = true // Automatically resize text to fit
+        statusText.paddingTop = "5px"
+        statusText.paddingBottom = "5px"
+        namePanel.addControl(statusText)
+       
+      
+        const acquireButton = Button.CreateSimpleButton("proceedButton", "Okay")
+        acquireButton.width = "140px"
+        acquireButton.height = "40px"
+        acquireButton.color = "white"
+        acquireButton.cornerRadius = 10
+        acquireButton.background = "green"
+        acquireButton.thickness = 0;
+        acquireButton.paddingTop = 5;
+        namePanel.addControl(acquireButton)
       
 
+    
+        statusTextRef.current = statusText;
+      
+        acquireButton.onPointerUpObservable.add(async () => {
+         
+            try {
+              if (round) {
+                // Call function one
+                await refetch();
+                // Remove namePanel
+                advancedTexture.removeControl(guiContainer);
+                guiContainerRef.current = null
+            } else {
+                // Remove namePanel
+                advancedTexture.removeControl(guiContainer);
+                guiContainerRef.current = null
+                
+                // Navigate to the specified page
+                navigate('/challenges');
+            }
 
+            } catch (err: any) {
+              console.error("Error in acquireButton click handler:", err);
+            }
+
+        })
+      
+ 
+    
+      
+        return namePanel
+      }
+
+      useEffect(() => {
+       const {stop} = startPolling();
+        return () => stop(); // Clean up when component unmounts
+      }, []);
+
+      
     return (
         <Flex direction="column" align="center" justify="center" bg="gray.900">
           <Box 

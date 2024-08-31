@@ -33,7 +33,7 @@ class Store:
             creator_name = challenge_data.get("creator_name")
             rounds = challenge_data.get("rounds")
             challenge_type = challenge_data.get("challenge_type")
-            creator_model_name = challenge_data.get("model")
+            creator_model_name = challenge_data.get("creator_model_name")
 
             # Validate required fields
             if not all([creator_name, rounds, challenge_type]):
@@ -199,14 +199,14 @@ class Store:
 
             return {
                 "success": True,
-                "message": "Successfully joined the challenge",
+                "message": "Successfully added opponent to challenge",
                 "challenge_id": challenge_id
             }
 
         except Exception as e:
             return {
                 "success": False,
-                "error": f"Failed to join challenge: {str(e)}"
+                "error": f"Failed to add opponent to challenge: {str(e)}"
             }
         
     def start_challenge(self,player_address,challenge_data):
@@ -256,6 +256,7 @@ class Store:
                 "message": "Challenge started successfully",
                 "challenge_id": challenge_id
             }
+        
         except Exception as e:
             return {
                 "success": False,
@@ -519,6 +520,7 @@ class Store:
                 "created_at":challenge.created_at,
                 "challenge_type":challenge.challenge_type,
                 "rounds": challenge.rounds,
+                "round_winners": challenge.round_winners,
                 "current_round":challenge.current_round,
                 "player_turn":challenge.turn.get_player() if challenge.turn is not None else None,
                 "player_one_captured":challenge.player_one.get_player() if challenge.player_one is not None else None,
@@ -561,6 +563,7 @@ class Store:
                 "created_at":challenge.created_at,
                 "challenge_type":challenge.challenge_type,
                 "rounds": challenge.rounds,
+                "round_winners": challenge.round_winners,
                 "current_round":challenge.current_round,
                 "player_turn":challenge.turn.get_player() if challenge.turn is not None else None,
                 "player_one_captured":challenge.player_one.get_player() if challenge.player_one is not None else None,

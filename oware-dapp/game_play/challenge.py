@@ -3,7 +3,7 @@ import random
 from collections import namedtuple
 from game_play.game.player import Player
 from game_play.game.gameplay import GamePlay
-from game_play.game.constants import PLAYER_ONE_HOUSES,PLAYER_TWO_HOUSES
+from game_play.game.constants import PLAYER_ONE_HOUSES,PLAYER_TWO_HOUSES,MODEL_ADDRESSES
 from game_play.game.coordinate_house_map import coordinates_houses_map
 import os
 import sys
@@ -11,6 +11,8 @@ import time
 import tflite_runtime.interpreter as tflite
 from .movesevaluator import GameplayEvaluationMoves
 import logging
+
+
 
 
 logging.basicConfig(level="INFO")
@@ -50,6 +52,7 @@ class Challenge:
         self.player_two_wins = 0
         self.tiebreak_round = False
         self.in_progress = False
+      
         
         
     def add_opponent(self,name,address,model_name= None):
@@ -78,6 +81,16 @@ class Challenge:
         self.oware_moves = GameplayEvaluationMoves()
 
         self.in_progress = True
+
+        player_turn = self.turn.get_player()
+
+        if (
+            self.challenge_type == 2
+            and player_turn['name'] in MODEL_ADDRESSES
+        ):
+            model = self.model_player_one if self.turn == self.player_one else self.model_player_two
+            selected_house = self.select_house(model)
+            self.move(selected_house)
 
     def move(self,selected_house):
 
@@ -141,7 +154,18 @@ class Challenge:
         self.game.state.change_turn(self.turn)
         self.turn = self.player_one if self.turn == self.player_two else self.player_two
         logger.info(f"After turn {self.turn.get_player()}")
-        
+
+        player_turn = self.turn.get_player()
+
+        if (
+            self.in_progress
+            and not self.game_ended
+            and self.challenge_type == 2
+            and player_turn['name'] in MODEL_ADDRESSES
+        ):
+            model = self.model_player_one if self.turn == self.player_one else self.model_player_two
+            selected_house = self.select_house(model)
+            self.move(selected_house)
         
         return {
             "game_result": result,
@@ -160,12 +184,12 @@ class Challenge:
     def update_round_winner(self, result):
         """Update the round winner based on the game result."""
         if result == 1:
-            winner = self.player_one
+            winner = self.player_one.get_player()
             self.player_one_wins += 1
             self.round_winners[self.current_round] = winner
             return True
         elif result == 2:
-            winner = self.player_two
+            winner = self.player_two.get_player()
             self.player_two_wins += 1
             self.round_winners[self.current_round] = winner
             return True
@@ -194,10 +218,10 @@ class Challenge:
 
     def determine_challenge_winner(self):
         if self.player_one_wins > self.player_two_wins:
-            self.winner =  self.player_one
+            self.winner =  self.player_one.get_player()
             return self.player_one, True
         elif self.player_two_wins > self.player_one_wins:
-            self.winner = self.player_two
+            self.winner = self.player_two.get_player()
             return self.player_two, True
         else:
             return None, False  # Tie, need tiebreaker

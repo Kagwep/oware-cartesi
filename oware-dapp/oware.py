@@ -106,6 +106,17 @@ def join_tournament(payload,sender):
     else:
         add_report(f"Failed to create tournament. Error: {result['error']}")
         return  "reject"
+    
+def add_opponent(payload,sender):
+
+    result = store.add_AI_opponent(sender, payload)
+
+    if result["success"]:
+        add_notice(f"opponnet {result['tournament_id']} was was added by {sender} ")
+        return "accept"
+    else:
+        add_report(f"Failed to add opponent. Error: {result['error']}")
+        return  "reject"
 
 def accept_challenge(payload,sender):
 
@@ -237,7 +248,9 @@ advance_method_handlers = {
     'spawn': spawn,
     'create_tournament': create_tournament,
     'join_tournament':join_tournament,
+    'add_opponent':add_opponent,
     'make_move_tournament':make_move_tournament,
+    'delegate_move':delegate_move,
 }
 
 inspect_handler_methods = {

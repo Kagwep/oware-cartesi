@@ -11,19 +11,22 @@ import Arena from '../pages/Arena';
 import { fetchGraphQLData } from '../utils/api';
 import { NOTICES_QUERY } from '../utils/query';
 import { useChallenges } from '../hooks/useChallenges';
+import AddOpponentChallengeFormModal from './forms/AddOpponentChallengeFormModal';
 
 interface ListChallengesProps {
   challenges: Challenge[];
   onJoinChallenge: (data: any) => void;
   fetchChallenges: () => Promise<void>;
+  onAddOpponentChallenge :  (data: any) => void;
 }
 
-const ListChallenges: React.FC<ListChallengesProps> = ({ challenges, onJoinChallenge, fetchChallenges}) => {
+const ListChallenges: React.FC<ListChallengesProps> = ({ challenges, onJoinChallenge, fetchChallenges,onAddOpponentChallenge}) => {
   const bgColor = useColorModeValue('gray.900', 'gray.700');
   const borderColor = useColorModeValue('gray.200', 'gray.600');
   const { address, isConnected } = useAccount()
   const toast = useToast();
   const [isOpen, setIsOpen] = useState(false);
+  const [isOpenOne, setIsOpenOne] = useState(false);
   const [selectedChallengeId, setSelectedChallengeId] = useState<string | null>(null);
   const [selectedChallenge, setSelectedChallenge] = useState<Challenge | null>(null);
 
@@ -41,6 +44,21 @@ const ListChallenges: React.FC<ListChallengesProps> = ({ challenges, onJoinChall
     } else {
       setSelectedChallengeId(challengeId);
       setIsOpen(true);
+    }
+  };
+
+  const handleOpponentAddClick= (challengeId: string) => {
+    if (!isConnected) {
+      toast({
+        title: 'Wallet not connected',
+        description: 'Please connect your wallet to proceed.',
+        status: 'warning',
+        duration: 5000,
+        isClosable: true,
+      });
+    } else {
+      setSelectedChallengeId(challengeId);
+      setIsOpenOne(true);
     }
   };
 
@@ -103,8 +121,6 @@ const ListChallenges: React.FC<ListChallengesProps> = ({ challenges, onJoinChall
 
        await fetchChallenges()
 
-      
-      
         // Additional success handling (e.g., reset form, close modal, etc.)
       } else {
         throw new Error("Failed to start challenge");
@@ -205,7 +221,21 @@ const ListChallenges: React.FC<ListChallengesProps> = ({ challenges, onJoinChall
               {challenge.opponent ? (
                 <Text fontWeight="bold">Opponent: <span className='text-teal-200'>{challenge.opponent[0]}</span></Text>
               ) : (
-                <Button
+
+                challenge.challenge_type === 2  || challenge.challenge_type == 3 || challenge.creator[0].toLocaleLowerCase() == address?.toLowerCase() ? (
+                  <Button
+                  bg="orange.900"
+                  size="sm"
+                  color={'white'}
+                  leftIcon={<StarIcon />}
+                  onClick={() =>  handleOpponentAddClick(challenge.challenge_id)}
+                  mt={2}
+                  mb={2}
+                >
+                  Add opponent
+                </Button>
+                ):(
+                  <Button
                   bg="purple.600"
                   size="sm"
                   color={'white'}
@@ -213,6 +243,10 @@ const ListChallenges: React.FC<ListChallengesProps> = ({ challenges, onJoinChall
                 >
                   Join Challenge
                 </Button>
+                )
+                  
+                
+
               )}
             </HStack>
             {!challenge.in_progress && !challenge.game_ended && challenge.opponent && isCreator(challenge.creator[1]) && (
@@ -241,7 +275,7 @@ const ListChallenges: React.FC<ListChallengesProps> = ({ challenges, onJoinChall
               Go to Arena
             </Button>
           )}
-            <Text mb={2}>Winner: <span className='text-cyan-500'>{challenge.winner || 'N/A'}</span></Text>
+            <Text mb={2}>Winner: <span className='text-cyan-500'>{challenge.winner?.address || 'N/A'}</span></Text>
 
             {
               challenge.state ? (
@@ -259,6 +293,12 @@ const ListChallenges: React.FC<ListChallengesProps> = ({ challenges, onJoinChall
               isOpen={isOpen && selectedChallengeId === challenge.challenge_id} 
               onClose={() => setIsOpen(false)} 
               onJoinChallenge={onJoinChallenge} 
+              challengeId={challenge.challenge_id}
+            />
+            <AddOpponentChallengeFormModal 
+              isOpen={isOpenOne && selectedChallengeId === challenge.challenge_id} 
+              onClose={() => setIsOpenOne(false)} 
+              onAddOpponentChallenge={onAddOpponentChallenge} 
               challengeId={challenge.challenge_id}
             />
           </Box>
