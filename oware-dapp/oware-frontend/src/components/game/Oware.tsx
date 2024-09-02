@@ -877,7 +877,11 @@ const OwareGame = ({ initialChallengeInfo }: {initialChallengeInfo: Challenge}) 
             };
         
             const boundingBoxCenter = getBoundingBoxCenter();
-            const radius = mesh.getBoundingInfo().boundingBox.extendSize.length() / 2;
+            let radius = mesh.getBoundingInfo().boundingBox.extendSize.length() / 2;
+
+            if (mesh.name === "captured1" || mesh.name === "captured2") {
+              radius = mesh.getBoundingInfo().boundingBox.extendSize.length() / 4;
+            }
         
             // Generate random spherical coordinates
             const theta = Math.random() * Math.PI; // Azimuthal angle (0 to π)
@@ -887,6 +891,7 @@ const OwareGame = ({ initialChallengeInfo }: {initialChallengeInfo: Challenge}) 
             const x = radius * Math.sin(theta) * Math.cos(phi);
             const y = radius * Math.sin(theta) * Math.sin(phi);
             const z = radius * Math.cos(theta);
+            
         
             // Ensure the point is in the upper hemisphere
             const newPosition = new Vector3(

@@ -112,7 +112,7 @@ def add_opponent(payload,sender):
     result = store.add_AI_opponent(sender, payload)
 
     if result["success"]:
-        add_notice(f"opponnet {result['tournament_id']} was was added by {sender} ")
+        add_notice(f"opponnet {result['challenge_id']} was was added by {sender} ")
         return "accept"
     else:
         add_report(f"Failed to add opponent. Error: {result['error']}")
@@ -143,6 +143,17 @@ def spawn(payload,sender):
 def make_move(payload,sender):
 
     result = store.make_move(sender, payload)
+
+    if result["success"]:
+        add_notice(f"Move made successfully. Result: {str(result['result'])}")
+        return 'accept'
+    else:
+        add_report(f"Failed to make move. Error: {result['error']}")
+        return  'reject'
+    
+def delegate_move(payload,sender):
+
+    result = store.delegate_make_move(sender, payload)
 
     if result["success"]:
         add_notice(f"Move made successfully. Result: {str(result['result'])}")
@@ -221,6 +232,17 @@ def get_challenge(payload):
     else:
         add_report(f"Failed to Fetch Challenge. Error: {output['error']}")
         return  'reject'
+    
+def get_tournament(payload):
+
+    output = store.get_tournament(payload)
+
+    if output["success"]:
+        add_report(output["result"])
+        return "accept"
+    else:
+        add_report(f"Failed to Fetch Tournament. Error: {output['error']}")
+        return  'reject'
 
     
 def get_player_fixture(payload):
@@ -261,6 +283,7 @@ inspect_handler_methods = {
     'get_player_fixture':get_player_fixture,
     'get_all_tournaments': get_all_tournaments,
     'get_challenge':get_challenge,
+    'get_tournament':get_tournament,
 }
 
 finish = {"status": "accept"}

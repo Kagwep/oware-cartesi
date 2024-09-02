@@ -51,7 +51,7 @@ const AddOpponentChallengeFormModal  = ({ isOpen, onClose,onAddOpponentChallenge
       <Modal isOpen={isOpen} onClose={onClose}>
         <ModalOverlay />
         <ModalContent>
-          <ModalHeader>Join a Challenge</ModalHeader>
+          <ModalHeader>Add opponent</ModalHeader>
           <ModalCloseButton />
           <ModalBody>
             <FormControl mt={4}>

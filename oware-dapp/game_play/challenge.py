@@ -11,7 +11,8 @@ import time
 import tflite_runtime.interpreter as tflite
 from .movesevaluator import GameplayEvaluationMoves
 import logging
-
+from  pathlib import Path
+from .leaderboard import Leaderboard
 
 
 
@@ -19,6 +20,8 @@ logging.basicConfig(level="INFO")
 logger = logging.getLogger(__name__)
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+leaderboard = Leaderboard()
 
 OPlayer = namedtuple('Player', ['name', 'address', 'model_name'])
 
@@ -66,11 +69,11 @@ class Challenge:
             self.player_one = Player(self.creator.name,PLAYER_ONE_HOUSES,0,self.creator.address)
             self.player_two = Player(self.opponent.name,PLAYER_TWO_HOUSES,0,self.opponent.address)
             self.model_player_one = self.load_model_tflite(self.creator.model_name) if self.creator.model_name  else None
-            self.model_player_two = self.load_model_tflite(self.opponent.model_name) if self.creator.model_name  else None
+            self.model_player_two = self.load_model_tflite(self.opponent.model_name) if self.opponent.model_name  else None
         else:
             self.player_one = Player(self.opponent.name,PLAYER_ONE_HOUSES,0,self.opponent.address)
             self.player_two =  Player(self.creator.name,PLAYER_TWO_HOUSES,0,self.creator.address)
-            self.model_player_two = self.load_model_tflite(self.creator.model_name) if self.creator.model_name  else None
+            self.model_player_two = self.load_model_tflite(self.creator.model_name) if self.opponent.model_name  else None
             self.model_player_one = self.load_model_tflite(self.opponent.model_name) if self.creator.model_name  else None
 
         self.turn = self.player_one 
@@ -178,20 +181,23 @@ class Challenge:
         }
     
     def load_model_tflite(self,name):
-        model = tflite.Interpreter(model_path=f"./models-tflite/agent-model-new-{name}.tflite")
+        model_path  = os.path.join(Path(__file__).parent, f'models-tflite/{name}.tflite')
+        model = tflite.Interpreter(model_path=model_path)
         return model
-
+    
     def update_round_winner(self, result):
         """Update the round winner based on the game result."""
         if result == 1:
             winner = self.player_one.get_player()
             self.player_one_wins += 1
             self.round_winners[self.current_round] = winner
+            leaderboard.add_or_update_player(self.player_one.name, self.player_one.player_address, score=100)
             return True
         elif result == 2:
             winner = self.player_two.get_player()
             self.player_two_wins += 1
             self.round_winners[self.current_round] = winner
+            leaderboard.add_or_update_player(self.player_two.name, self.player_two.player_address, score=20)
             return True
         else:
             if self.game.state.inprogress:

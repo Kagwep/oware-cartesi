@@ -5,46 +5,42 @@ import { sendInput } from '../../utils';
 import { useWriteInputBoxAddInput } from "../../hooks/generated";
 import { v4 as uuidv4 } from 'uuid';
 
-interface JoinChallengeFormModalProps {
+interface AddOpponentTournamentFormModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onJoinChallenge: (dataToSend: any) => void;
-  challengeId: string;
+  onAddOpponentTournament: (dataToSend: any) => void;
+  tournamentId: string;
 }
 
-const JoinChallengeFormModal = ({ isOpen, onClose,onJoinChallenge, challengeId}: JoinChallengeFormModalProps) => {
+const AddOpponentTournamentFormModal  = ({ isOpen, onClose,onAddOpponentTournament, tournamentId}: AddOpponentTournamentFormModalProps) => {
 
     const toast = useToast();
 
     const [accountIndex] = useState(0);
 
-    const [challengeData, setChallengeData] = useState({
-      name: '',
+    const [tournamentData, setTournamentData] = useState({
       model: ''
     });
   
     const handleInputChange = (e: any) => {
       const { name, value } = e.target;
-      setChallengeData({
-        ...challengeData,
+      setTournamentData({
+        ...tournamentData,
         [name]: value,
       });
     };
 
-    const handleSubmit = async (challengeId: string) => {
-        console.log(`Joining challenge with ID: ${challengeId}`);
+    const handleSubmit = async (tournamentId: string) => {
+        console.log(`Joining tournament with ID: ${tournamentId}`);
 
         const dataToSend = {
-          method: "accept_challenge",
-          challenge_id: parseInt(challengeId),
-          ...challengeData
+          method: "add_opponent",
+          tournament_id: parseInt(tournamentId),
+          ...tournamentData
         };
 
-        if (!dataToSend.model){
-            delete (dataToSend as any).model
-        }
 
-        onJoinChallenge(dataToSend);
+        onAddOpponentTournament(dataToSend);
 
         onClose()
 
@@ -55,24 +51,14 @@ const JoinChallengeFormModal = ({ isOpen, onClose,onJoinChallenge, challengeId}:
       <Modal isOpen={isOpen} onClose={onClose}>
         <ModalOverlay />
         <ModalContent>
-          <ModalHeader>Join a Challenge</ModalHeader>
+          <ModalHeader>Add opponent</ModalHeader>
           <ModalCloseButton />
           <ModalBody>
-            <FormControl>
-              <FormLabel>Name</FormLabel>
-              <Input
-                name="name"
-                value={challengeData.name}
-                onChange={handleInputChange}
-                placeholder="Enter your name"
-              />
-            </FormControl>
-  
             <FormControl mt={4}>
             <FormLabel> Model Name</FormLabel>
             <Select
                 name="model"
-                value={challengeData.model}
+                value={tournamentData.model}
                 onChange={handleInputChange}
             >
                 <option value="">Select model name</option>
@@ -87,7 +73,7 @@ const JoinChallengeFormModal = ({ isOpen, onClose,onJoinChallenge, challengeId}:
           </ModalBody>
   
           <ModalFooter>
-            <Button colorScheme="green" mr={3} onClick={() => handleSubmit(challengeId)}>
+            <Button colorScheme="green" mr={3} onClick={() => handleSubmit(tournamentId)}>
               Save
             </Button>
             <Button variant="ghost" onClick={onClose}>Cancel</Button>
@@ -97,4 +83,4 @@ const JoinChallengeFormModal = ({ isOpen, onClose,onJoinChallenge, challengeId}:
     );
   };
   
-  export default JoinChallengeFormModal;
+  export default AddOpponentTournamentFormModal ;

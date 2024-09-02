@@ -1,10 +1,16 @@
 from game_play.challenge import Challenge
-from game_play.game.constants import CHALLENGE_TYPE_AI_VS_AI, CHALLENGE_TYPE_USER_VS_AI
+from game_play.game.constants import CHALLENGE_TYPE_AI_VS_AI, CHALLENGE_TYPE_USER_VS_AI,MODEL_ADDRESSES
 from game_play.tournaments import OPlayer, Tournament
 from utils.utils import HexConverter
 from game_play.game.coordinate_house_map import coordinates_houses_map
 import json
 from game_play.leaderboard import Leaderboard
+import logging
+import os
+import pathlib
+
+logging.basicConfig(level="INFO")
+logger = logging.getLogger(__name__)
 
 hexConverter = HexConverter()
 
@@ -192,9 +198,10 @@ class Store:
                 "success": False,
                 "error": "Invalid model name"
             }
+        
 
         try:
-            challenge.add_opponent("Oware_agent", agent_address, model_name)
+            challenge.add_opponent(model_name, agent_address, model_name)
             self.player_challenges[agent_address] = challenge_id
 
             return {
@@ -245,7 +252,7 @@ class Store:
         
         try:
 
-            if challenge_type in [ CHALLENGE_TYPE_AI_VS_AI]:
+            if challenge_type in [CHALLENGE_TYPE_AI_VS_AI]:
                 challenge.spawn()
                 challenge.run_ai_vs_ai_match()
             else:
@@ -265,7 +272,7 @@ class Store:
 
     def join_tournament(self, player_address, tournament_data):
 
-        tournament_id = tournament.get("tournament_id")
+        tournament_id = tournament_data.get("tournament_id")
 
         if not tournament_id:
             return {
@@ -281,7 +288,7 @@ class Store:
                 "error": "Tournament not found"
             }
         
-        player_name = tournament_data.get("creator_name")
+        player_name = tournament_data.get("name")
         model_name = tournament_data.get("model")
 
 
@@ -381,6 +388,102 @@ class Store:
                 "error": f"Failed to make move: {str(e)}"
             }
         
+
+    def delegate_make_move(self,sender, challenge_data):
+
+        challenge_id = challenge_data.get("challenge_id")
+
+        if not challenge_id:
+            return {
+                "success": False,
+                "error": "Challenge ID is required"
+            }
+            
+        challenge = self.challenges.get(challenge_id)
+
+
+        if not challenge:
+            return {
+                "success": False,
+                "error": "Challenge not found"
+            }
+        
+        if sender != challenge.turn.player_address or not challenge.in_progress:
+            return {
+                "success": False,
+                "error": "It's not your turn or the challenge is not in progress"
+            }
+        
+        if challenge.creator.address == sender and not challenge.creator.model_name:
+            return {
+                "success": False,
+                "error": "You do not have an agent"
+            }
+        
+        if challenge.opponent.address == sender and not challenge.opponent.model_name:
+            return {
+                "success": False,
+                "error": "You do not have an agent"
+            }
+        
+        model = None
+
+        if challenge.player_one.player_address == sender: 
+        
+            model = challenge.model_player_one 
+
+        elif challenge.player_two.player_address == sender:
+
+            model = challenge.model_player_two
+
+        if not model:
+            return {
+                "success": False,
+                "error": "Agent not found"
+            }
+        
+        house = challenge.select_house(model)
+        
+        seeds = challenge.game.board.get_seeds()
+        moves, moves_state = challenge.game.get_valid_moves(challenge.turn,seeds)
+
+        coordinate = next((coord for coord, name in coordinates_houses_map.items() if name == house), None)
+
+        if coordinate is None:
+            return {
+                "success": False,
+                "error": "Invalid house name"
+            }
+        
+        if coordinate not in moves:
+            return {
+                "success": False,
+                "error": "Invalid MOve"
+            }
+            
+        try:
+            
+            result = challenge.move(house)
+
+            if result['challenge_ended']:
+                self.delete_player_from_active_challenge(challenge)
+                self.add_or_update_player(challenge.winner.name, challenge.winner.address, 100)
+                opponent = challenge.opponent if challenge.winner == challenge.creator else challenge.creator
+                self.add_or_update_player(opponent.name, opponent.address, 2)
+
+            return {
+                "success": True,
+                "message": "Move made successfully",
+                "result": result
+            }
+        
+        except Exception as e:
+            return {
+                "success": False,
+                "error": f"Failed to make move: {str(e)}"
+            }
+        
+        
     def make_move_tournament(self,sender, tournament_data):
 
         house = tournament_data.get("house")
@@ -457,6 +560,83 @@ class Store:
                 "error": f"Failed to make move: {str(e)}"
             }
 
+    def add_agent_opponent_tournament(self,creator_address, tournament_data):
+     
+            tournament_id = tournament_data.get("tournament_id")
+            challenge_id = tournament_data.get("challenge_id")
+            model_name = tournament_data.get("model")
+
+            if not tournament_id:
+                return {
+                    "success": False,
+                    "error": "Tournament ID is required"
+                }
+
+            tournament = self.get_tournament(tournament_id)
+            
+            if not tournament:
+                return {
+                    "success": False,
+                    "error": "Tournament not found"
+                }
+            
+            if tournament.started_at:
+              return {
+                    "success": False,
+                    "error": "Tournament already in progress"
+                }
+            
+
+            if creator_address != tournament.creator:
+                return {
+                    "success": False,
+                    "error": "It's not your turn or the challenge is not in progress"
+                }
+            
+
+            if not challenge_id:
+                return {
+                    "success": False,
+                    "error": "Challenge ID is required"
+                }
+
+            challenge = self.tournaments.challenges.get(challenge_id)
+            
+            if not challenge:
+                return {
+                    "success": False,
+                    "error": "Challenge not found"
+                }
+
+
+            if not model_name:
+                return {
+                    "success": False,
+                    "error": "Model name is required"
+                }
+            
+            agent_address = self.model_addresses.get(model_name)
+            
+            if not agent_address:
+                return {
+                    "success": False,
+                    "error": "Invalid model name"
+                }
+
+            player = OPlayer(model_name, agent_address, model_name)
+
+            try:
+                tournament.join_tournament(player)
+                return {
+                    "success": True,
+                    "message": "Joined tournament successfully",
+                    "tournament_id": tournament_id
+                }
+            except Exception as e:
+                return {
+                    "success": False,
+                    "error": f"Failed to start challenge: {str(e)}"
+                } 
 
     def get_next_challenge_id(self):
         self.challenge_next_id += 1
@@ -724,8 +904,9 @@ class Store:
         
     def load_model_addresses(self):
         """Load model addresses from the JSON file."""
+        new_path = os.path.join(pathlib.Path(__file__).parent.resolve(), 'model_addresses.json')
         try:
-            with open('model_addresses.json', 'r') as f:
+            with open(new_path, 'r') as f:
                 return json.load(f)
         except FileNotFoundError:
             return {}
@@ -744,17 +925,68 @@ class Store:
                 "creator" : tournament.creator,
                 "players": tournament.players,
                 "in_progress":  tournament.in_progress,
-                "game_ended": tournament.game_ended,
                 "winner": tournament.tournament_winner,
                 "rounds_per_challenge":tournament.rounds_per_challenge,
                 "fixtures": tournament.fixtures,
                 "started_at":tournament.started_at,
                 "ended_at":tournament.ended_at,
                 "round_winners":tournament.round_winners,
-                "active_round":tournament.active_round
+                "active_round":tournament.active_round,
+                "challenges":tournament.challenges,
+                "winners":tournament.winners,
+                "allowable_player_counts":tournament.allowable_player_counts
             })
         
         output = json.dumps({"tournaments": tournaments_list})
 
         return output
     
+    def get_tournament(self, tournament_data):
+
+
+        tournament_id = tournament_data.get("tournament_id")
+
+        if not tournament_id:
+            return {
+                "success": False,
+                "error": "tournament ID is required"
+            }
+        
+        tournament = self.tournaments.get(tournament_id)
+        
+        if not tournament:
+            return {
+                "success": False,
+                "error": "tournament not found"
+            }
+        
+
+
+        tournaments_list = []
+
+
+        tournament = self.tournaments.get(tournament_id)
+
+        tournaments_list.append({
+            "tournament_id": tournament_id,
+            "no_of_players": tournament.max_players,
+            "creator" : tournament.creator,
+            "players": tournament.players,
+            "in_progress":  tournament.in_progress,
+            "winner": tournament.tournament_winner,
+            "rounds_per_challenge":tournament.rounds_per_challenge,
+            "fixtures": tournament.fixtures,
+            "started_at":tournament.started_at,
+            "ended_at":tournament.ended_at,
+            "round_winners":tournament.round_winners,
+            "active_round":tournament.active_round,
+            "challenges":tournament.challenges,
+            "winners":tournament.winners,
+            "allowable_player_counts":tournament.allowable_player_counts
+        })
+        
+        output = json.dumps({"tournament": tournaments_list})
+
+        return output
+
+   

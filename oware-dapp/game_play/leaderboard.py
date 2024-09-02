@@ -4,10 +4,14 @@ class Leaderboard:
         # Store player details using Ethereum address as a key
         self.players = {}
 
-    def add_player(self, player_name, eth_address):
-        # Add a new player with an Ethereum address
+    def add_or_update_player(self, player_name, eth_address, score=0):
+        # Add a new player or update an existing player's score
         if eth_address not in self.players:
-            self.players[eth_address] = {'player_name': player_name, 'score': 0, 'rank_title': None}
+            self.players[eth_address] = {'player_name': player_name, 'score': score, 'rank_title': None}
+        else:
+            self.players[eth_address]['score'] += score
+
+        self.update_rank_title(eth_address)
 
     def update_score(self, eth_address, score):
         # Update the score for a player and re-calculate rank titles

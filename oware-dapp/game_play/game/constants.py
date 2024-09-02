@@ -1,4 +1,6 @@
 import json
+import os
+import pathlib
 
 NUMBER_OF_HOUSES = 12
 PLAYER_ONE_HOUSES = ["House1", "House2", "House3", "House4", "House5", "House6"]
@@ -11,8 +13,9 @@ CHALLENGE_TYPE_AI_VS_AI = 3
 
 def load_model_addresses():
     """Load model addresses from the JSON file."""
+    new_path = os.path.join(pathlib.Path(__file__).parent.resolve(), 'model_addresses.json')
     try:
-        with open('model_addresses.json', 'r') as f:
+        with open(new_path, 'r') as f:
             return json.load(f)
     except FileNotFoundError:
         return {}

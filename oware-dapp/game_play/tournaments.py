@@ -2,6 +2,7 @@ import random
 import time
 from collections import namedtuple
 from .challenge import Challenge
+from game_play.game.constants import MODEL_ADDRESSES
 
 # Define a Player named tuple to store player attributes
 OPlayer = namedtuple('Player', ['name', 'address', 'model_name'])
@@ -24,6 +25,7 @@ class Tournament:
         self.fixtures = {}
         self.active_round = 1
         self.round_winners = {}
+        self.in_progress =  False
 
         if not self.is_valid_player_count(self.max_players):
             raise ValueError(f"Invalid number of players. Must be an even number between 4 and 16 inclusive.")
@@ -39,6 +41,7 @@ class Tournament:
     def start(self):
         self.started_at = time.time()
         self.create_fixtures(self.players)
+        self.in_progress = True
 
     def create_fixtures(self, players):
         """ Randomly pair players and create fixtures for a round of challenges. """
@@ -49,7 +52,15 @@ class Tournament:
                 challenge_id = self.next_challenge_id
                 player_one = players[i]
                 player_two = players[i + 1]
-                new_challenge = Challenge(player_one.name, player_one.address,self.rounds_per_challenge,challenge_id,player_one.model_name)
+
+                challenge_type = 1
+
+                if (player_one.address == MODEL_ADDRESSES[player_one.name]) and (player_two.address == MODEL_ADDRESSES[player_two.name]):
+                    challenge_type = 3
+                elif((player_one.address == MODEL_ADDRESSES[player_one.name]) or (player_two.address == MODEL_ADDRESSES[player_two.name])):
+                    challenge_type = 2
+
+                new_challenge = Challenge(player_one.name, player_one.address,self.rounds_per_challenge,challenge_type,challenge_id,player_one.model_name)
                 new_challenge.add_opponent(player_two.name, player_two.address, player_two.model_name)
                 new_challenge.spawn()
                 self.challenges[challenge_id] = new_challenge
@@ -74,6 +85,8 @@ class Tournament:
         """Check if all challenges in the current round are completed."""
         if self.is_round_complete():
             self.prepare_next_round()
+        
+
 
     def is_round_complete(self):
         """Check if all challenges in the current round are completed."""
@@ -87,6 +100,7 @@ class Tournament:
         if len(winners) == 1:
             self.tournament_winner = winners[0]
             self.ended_at = time.time()
+            self.in_progress = False
             return
 
         self.active_round += 1
