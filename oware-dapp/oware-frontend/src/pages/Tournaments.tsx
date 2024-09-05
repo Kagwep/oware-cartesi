@@ -10,31 +10,149 @@ import {
   useToast,
 } from '@chakra-ui/react';
 import { FcLock } from 'react-icons/fc';
+import TouramentFormModal from '../components/forms/TouramentFormModal';
+import { useChallenges } from '../hooks/useChallenges';
+import { useAccount } from 'wagmi';
+import { useTournaments } from '../hooks/useTournaments';
+import { useWriteInputBoxAddInput } from '../hooks/generated';
+import { v4 as uuidv4 } from 'uuid';
+import { sendInput } from '../utils';
+import ListTournaments from '../components/ListTournaments';
 
 export default function Tournaments() {
-  const [tournaments, setTournaments] = useState([]);
   const toast = useToast();
+  const [isOpen, setIsOpen] = useState(false);
+  const { tournaments, fetchTournaments } = useTournaments();
+  const { address, isConnected, chain } = useAccount();
 
+  const { writeContractAsync } = useWriteInputBoxAddInput();
   useEffect(() => {
-    // Simulating fetch request to the backend for tournaments data
-    async function fetchTournaments() {
-      try {
-        const response = await fetch('/api/tournaments'); // replace with your actual API endpoint
-        const data = await response.json();
-        setTournaments(data.tournaments);
-      } catch (error) {
-        toast({
-          title: "Error fetching tournaments.",
-          description: "There was an issue loading the tournaments data.",
-          status: "error",
+    // Simulating fetch request to the backend for challenges data
+    fetchTournaments();
+  }, [toast,address,fetchTournaments]);
+
+
+  const handleClick = () => {
+    if (!isConnected) {
+      toast({
+        title: 'Wallet not connected',
+        description: 'Please connect your wallet to proceed.',
+        status: 'warning',
+        duration: 5000,
+        isClosable: true,
+      });
+    } else {
+      setIsOpen(true);
+    }
+  };
+
+  const handleJoinTournament = async(dataToSend: any) => {
+    // Logic to join the challenge (e.g., API call)
+    console.log(`Joining challenge with ID: ${dataToSend.challenge_id}`);
+
+    const toastId = uuidv4();
+
+    toast({
+      id: toastId,
+      title: "joining challenge",
+      description: "Please wait...",
+      status: "info",
+      duration: null,
+      isClosable: true,
+    });
+
+
+    try {
+      const result = await sendInput(JSON.stringify(dataToSend), writeContractAsync);
+      if (result.success) {
+
+        toast.update(toastId, {
+          title: "Joined Challenge",
+          description: "You have joined the challenge successfully.",
+          status: "success",
           duration: 5000,
           isClosable: true,
         });
+        // Additional success handling (e.g., reset form, close modal, etc.)
+
+          // Wait for 20 seconds
+        await new Promise(resolve => setTimeout(resolve, 5000));
+
+
+        await fetchTournaments()
+
+      } else {
+        throw new Error("Failed to join challenge");
       }
+    } catch (error) {
+      console.error("Error creating challenge:", error);
+      toast.update(toastId, {
+        title: "Error",
+        description: "Failed to join challenge. Please try again.",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
+      // Additional error handling if needed
     }
 
-    fetchTournaments();
-  }, [toast]);
+    
+
+  };
+
+  const handleAddOpponentTournament = async(dataToSend: any) => {
+    // Logic to join the challenge (e.g., API call)
+    console.log(`Adding opponent with ID: ${dataToSend.tournament_id}`);
+
+    const toastId = uuidv4();
+
+    toast({
+      id: toastId,
+      title: "Adding opponent to tournament",
+      description: "Please wait...",
+      status: "info",
+      duration: null,
+      isClosable: true,
+    });
+
+
+    try {
+      const result = await sendInput(JSON.stringify(dataToSend), writeContractAsync);
+      if (result.success) {
+
+        toast.update(toastId, {
+          title: "Opponent added",
+          description: "You have successfully added your opponent.",
+          status: "success",
+          duration: 5000,
+          isClosable: true,
+        });
+        // Additional success handling (e.g., reset form, close modal, etc.)
+
+          // Wait for 20 seconds
+        await new Promise(resolve => setTimeout(resolve, 5000));
+
+
+        await fetchTournaments()
+
+      } else {
+        throw new Error("Failed to add opponent");
+      }
+    } catch (error) {
+      console.error("Error ading opponent:", error);
+      toast.update(toastId, {
+        title: "Error",
+        description: "Failed to add opponent. Please try again.",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
+      // Additional error handling if needed
+    }
+
+    
+
+  };
 
   return (
     <Stack p="4" boxShadow="lg" m="4" borderRadius="sm" bg="gray.800" color="white">
@@ -42,32 +160,12 @@ export default function Tournaments() {
         <Heading fontSize="2xl" mb={4}>Tournaments</Heading>
       </Stack>
       <Stack direction={{ base: 'column', md: 'row' }} justifyContent="space-between" mt={6}>
-        <Button variant="outline" colorScheme="green">
-          Create Tournament
+        <Button variant="outline" colorScheme="green" onClick={handleClick}>
+          Create new
         </Button>
+        <TouramentFormModal isOpen={isOpen} onClose={() => setIsOpen(false)} fetchTournaments={fetchTournaments}/>
       </Stack>
-
-      {tournaments.length > 0 ? (
-        tournaments.map((tournament, index) => (
-          <Box key={index} p={4} borderWidth="1px" borderRadius="md" mb={4} bg="gray.700">
-            <Text fontWeight="bold">Tournament ID: {tournament.tournament_id}</Text>
-            <Text>Creator: {tournament.creator}</Text>
-            <Text>Number of Players: {tournament.no_of_players}</Text>
-            <Text>In Progress: {tournament.in_progress ? 'Yes' : 'No'}</Text>
-            <Text>Game Ended: {tournament.game_ended ? 'Yes' : 'No'}</Text>
-            <Text>Winner: {tournament.winner ? tournament.winner : 'N/A'}</Text>
-            <Text>Rounds per Challenge: {tournament.rounds_per_challenge}</Text>
-            <Text>Active Round: {tournament.active_round}</Text>
-            <Text>Started At: {tournament.started_at}</Text>
-            <Text>Ended At: {tournament.ended_at ? tournament.ended_at : 'Ongoing'}</Text>
-            <Text>Round Winners: {tournament.round_winners.join(', ')}</Text>
-            <Text>Fixtures: {JSON.stringify(tournament.fixtures)}</Text>
-          </Box>
-        ))
-      ) : (
-        <Text>No tournaments available at the moment.</Text>
-      )}
-
+      <ListTournaments tournaments={tournaments} onJoinTournament={handleJoinTournament} fetchTournaments={fetchTournaments} onAddOpponentTournament={handleAddOpponentTournament} />
     </Stack>
   );
 }

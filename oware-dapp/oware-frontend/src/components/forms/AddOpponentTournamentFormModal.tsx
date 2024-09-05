@@ -34,7 +34,7 @@ const AddOpponentTournamentFormModal  = ({ isOpen, onClose,onAddOpponentTourname
         console.log(`Joining tournament with ID: ${tournamentId}`);
 
         const dataToSend = {
-          method: "add_opponent",
+          method: "add_opponent_tournament",
           tournament_id: parseInt(tournamentId),
           ...tournamentData
         };

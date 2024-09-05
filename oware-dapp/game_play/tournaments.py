@@ -3,6 +3,11 @@ import time
 from collections import namedtuple
 from .challenge import Challenge
 from game_play.game.constants import MODEL_ADDRESSES
+from datetime import datetime, timezone
+import logging
+
+logging.basicConfig(level="INFO")
+logger = logging.getLogger(__name__)
 
 # Define a Player named tuple to store player attributes
 OPlayer = namedtuple('Player', ['name', 'address', 'model_name'])
@@ -39,7 +44,7 @@ class Tournament:
             self.start()
 
     def start(self):
-        self.started_at = time.time()
+        self.started_at = datetime.now(timezone.utc).timestamp()
         self.create_fixtures(self.players)
         self.in_progress = True
 
@@ -55,14 +60,21 @@ class Tournament:
 
                 challenge_type = 1
 
-                if (player_one.address == MODEL_ADDRESSES[player_one.name]) and (player_two.address == MODEL_ADDRESSES[player_two.name]):
+                if (player_one.address == MODEL_ADDRESSES.get(player_one.name)) and (player_two.address == MODEL_ADDRESSES.get(player_two.name)):
                     challenge_type = 3
-                elif((player_one.address == MODEL_ADDRESSES[player_one.name]) or (player_two.address == MODEL_ADDRESSES[player_two.name])):
+                elif (player_one.address == MODEL_ADDRESSES.get(player_one.name)) or (player_two.address == MODEL_ADDRESSES.get(player_two.name)):
                     challenge_type = 2
+                else:
+                    challenge_type = 1  
+
 
                 new_challenge = Challenge(player_one.name, player_one.address,self.rounds_per_challenge,challenge_type,challenge_id,player_one.model_name)
                 new_challenge.add_opponent(player_two.name, player_two.address, player_two.model_name)
-                new_challenge.spawn()
+
+                if challenge_type != 3 :
+                  
+                    result = new_challenge.spawn()
+
                 self.challenges[challenge_id] = new_challenge
                 round_fixtures.append(Fixture(challenge_id, player_one, player_two))
                 self.next_challenge_id += 1
@@ -83,15 +95,17 @@ class Tournament:
         self.winners.append(winner)
         self.round_winners.setdefault(self.active_round, []).append(winner)
         """Check if all challenges in the current round are completed."""
-        if self.is_round_complete():
-            self.prepare_next_round()
         
+        if self.is_round_complete():
+            self.prepare_next_round()   
 
 
     def is_round_complete(self):
         """Check if all challenges in the current round are completed."""
         expected_winners = len(self.fixtures[self.active_round])
         actual_winners = len(self.round_winners.get(self.active_round, []))
+        logger.info(f"After turn {expected_winners == actual_winners}")
+        logger.info(f"After turn {expected_winners,actual_winners}")
         return expected_winners == actual_winners
     
     def prepare_next_round(self):
@@ -99,12 +113,12 @@ class Tournament:
         winners = self.round_winners[self.active_round]
         if len(winners) == 1:
             self.tournament_winner = winners[0]
-            self.ended_at = time.time()
+            self.ended_at = datetime.now(timezone.utc).timestamp()
             self.in_progress = False
             return
 
         self.active_round += 1
-        winning_players = [player for player in winners]
+        winning_players = [OPlayer(player.name, player.address, player.model_name) for player in winners]
 
         self.create_fixtures(winning_players)
     
@@ -119,10 +133,10 @@ class Tournament:
         """ Retrieve all fixtures for a specific round. """
         return self.fixtures.get(round_number, [])
 
-    def get_player_fixture(self, round_number, player_address):
+    def get_player_fixture(self, round_number, address):
         """ Find the fixture for a specific player in a given round. """
         for fixture in self.fixtures.get(round_number, []):
-            if fixture.player_one.address == player_address or fixture.player_two.address == player_address:
+            if fixture.player_one.address == address or fixture.player_two.address == address:
                 return fixture
         return None
 

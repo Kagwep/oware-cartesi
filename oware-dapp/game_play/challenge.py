@@ -12,16 +12,14 @@ import tflite_runtime.interpreter as tflite
 from .movesevaluator import GameplayEvaluationMoves
 import logging
 from  pathlib import Path
-from .leaderboard import Leaderboard
-
+from .common import leader_board
+from datetime import datetime, timezone
 
 
 logging.basicConfig(level="INFO")
 logger = logging.getLogger(__name__)
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-leaderboard = Leaderboard()
 
 OPlayer = namedtuple('Player', ['name', 'address', 'model_name'])
 
@@ -36,7 +34,7 @@ class Challenge:
         self.game = None
         self.id = _id
         self.winner = None
-        self.created_at = time.time()
+        self.created_at =  datetime.now(timezone.utc).timestamp()
         self.game_ended = False
         self.turn = None
         self.model_player_one=  None
@@ -66,15 +64,15 @@ class Challenge:
         random_number = random.randint(1, 6)
 
         if random_number > 3:
-            self.player_one = Player(self.creator.name,PLAYER_ONE_HOUSES,0,self.creator.address)
-            self.player_two = Player(self.opponent.name,PLAYER_TWO_HOUSES,0,self.opponent.address)
+            self.player_one = Player(self.creator.name,PLAYER_ONE_HOUSES,0,self.creator.address,self.creator.model_name)
+            self.player_two = Player(self.opponent.name,PLAYER_TWO_HOUSES,0,self.opponent.address,self.opponent.model_name)
             self.model_player_one = self.load_model_tflite(self.creator.model_name) if self.creator.model_name  else None
             self.model_player_two = self.load_model_tflite(self.opponent.model_name) if self.opponent.model_name  else None
         else:
-            self.player_one = Player(self.opponent.name,PLAYER_ONE_HOUSES,0,self.opponent.address)
-            self.player_two =  Player(self.creator.name,PLAYER_TWO_HOUSES,0,self.creator.address)
-            self.model_player_two = self.load_model_tflite(self.creator.model_name) if self.opponent.model_name  else None
-            self.model_player_one = self.load_model_tflite(self.opponent.model_name) if self.creator.model_name  else None
+            self.player_one = Player(self.opponent.name,PLAYER_ONE_HOUSES,0,self.opponent.address,self.opponent.model_name)
+            self.player_two =  Player(self.creator.name,PLAYER_TWO_HOUSES,0,self.creator.address,self.creator.model_name)
+            self.model_player_two = self.load_model_tflite(self.creator.model_name) if self.creator.model_name  else None
+            self.model_player_one = self.load_model_tflite(self.opponent.model_name) if self.opponent.model_name  else None
 
         self.turn = self.player_one 
 
@@ -87,24 +85,59 @@ class Challenge:
 
         player_turn = self.turn.get_player()
 
+       
+
         if (
             self.challenge_type == 2
             and player_turn['name'] in MODEL_ADDRESSES
         ):
             model = self.model_player_one if self.turn == self.player_one else self.model_player_two
             selected_house = self.select_house(model)
-            self.move(selected_house)
+            result = self.agent_move(selected_house)
+            if result:
+                return result
+        if (
+            self.challenge_type == 3
+            and player_turn['name'] in MODEL_ADDRESSES
+        ):
+            model = self.model_player_one if self.turn == self.player_one else self.model_player_two
+            selected_house = self.select_house(model)
+            result  = self.agent_move(selected_house)
+            if result:
+                return result
+
+        return None
+
+    def agent_move(self,selected_house):
+            if selected_house is not None:
+                result = self.move(selected_house)
+                return result
+            else:
+                result =self.game.state.set_winner()
+                challenge_winner, challenge_ended = self.check_winner(result)
+
+                return {
+                "game_result": result,
+                "challenge_ended": challenge_ended,
+                "challenge_winner": challenge_winner,
+                "current_round": self.current_round,
+                "player_one_wins": self.player_one_wins,
+                "player_two_wins": self.player_two_wins,
+                "challenge_id": self.id
+                }
 
     def move(self,selected_house):
 
         seeds,captured = self.game.make_move(selected_house)
         self.game.state.update_board_state(seeds)
-        result = self.game.check_game_outcome_status()
+        
 
         if self.turn == self.player_two and captured > 0:
             self.player_two.captured += captured
         elif self.turn == self.player_one and captured > 0:
             self.player_one.captured += captured
+
+        result = self.game.check_game_outcome_status()
 
         if result == 1:
             print(f"{self.player_one.name} wins!")
@@ -153,10 +186,10 @@ class Challenge:
 
         challenge_winner, challenge_ended = self.check_winner(result) 
 
-        logger.info(f"Current turn {self.turn.get_player()}")
+        #logger.info(f"Current turn {self.turn.get_player()}")
         self.game.state.change_turn(self.turn)
         self.turn = self.player_one if self.turn == self.player_two else self.player_two
-        logger.info(f"After turn {self.turn.get_player()}")
+        #logger.info(f"After turn {self.turn.get_player()}")
 
         player_turn = self.turn.get_player()
 
@@ -168,7 +201,21 @@ class Challenge:
         ):
             model = self.model_player_one if self.turn == self.player_one else self.model_player_two
             selected_house = self.select_house(model)
-            self.move(selected_house)
+            result = self.agent_move(selected_house)
+            if result:
+                return result
+
+        if (
+            self.in_progress
+            and not self.game_ended
+            and self.challenge_type == 3
+            and player_turn['name'] in MODEL_ADDRESSES
+        ):
+            model = self.model_player_one if self.turn == self.player_one else self.model_player_two
+            selected_house = self.select_house(model)
+            result = self.agent_move(selected_house)
+            if result:
+                return result
         
         return {
             "game_result": result,
@@ -191,13 +238,13 @@ class Challenge:
             winner = self.player_one.get_player()
             self.player_one_wins += 1
             self.round_winners[self.current_round] = winner
-            leaderboard.add_or_update_player(self.player_one.name, self.player_one.player_address, score=100)
+            leader_board.add_or_update_player(self.player_one.name, self.player_one.address, score=100)
             return True
         elif result == 2:
             winner = self.player_two.get_player()
             self.player_two_wins += 1
             self.round_winners[self.current_round] = winner
-            leaderboard.add_or_update_player(self.player_two.name, self.player_two.player_address, score=20)
+            leader_board.add_or_update_player(self.player_two.name, self.player_two.address, score=20)
             return True
         else:
             if self.game.state.inprogress:
@@ -225,12 +272,16 @@ class Challenge:
     def determine_challenge_winner(self):
         if self.player_one_wins > self.player_two_wins:
             self.winner =  self.player_one.get_player()
-            return self.player_one, True
+            self.in_progress = False
+            self.game_ended = True
+            return self.player_one
         elif self.player_two_wins > self.player_one_wins:
             self.winner = self.player_two.get_player()
-            return self.player_two, True
+            self.in_progress = False
+            self.game_ended = True
+            return self.player_two
         else:
-            return None, False  # Tie, need tiebreaker
+            return None
 
     def tiebreaker(self):
         print("Tie detected. Starting tiebreaker round.")
@@ -248,9 +299,11 @@ class Challenge:
             if len(move_selected) == 3:
                 selected_move,new_board_state,score = move_selected
 
-            selected_house = coordinates_houses_map.get(selected_move)
-            
-        return selected_house
+                selected_house = coordinates_houses_map.get(selected_move)
+                
+                return selected_house
+            else:
+                return None
 
     def run_ai_vs_ai_match(self):
 
@@ -263,6 +316,10 @@ class Challenge:
 
             house =  self.select_house(self,model)
 
+            if house is None:
+
+                return 
+
             result = self.move(self,house)
 
         return result
@@ -274,3 +331,21 @@ class Challenge:
 
 
 
+    def to_dict(self):
+            return {
+                "challenge_id": self.id,
+                "creator": self.creator,
+                "opponent": self.opponent,
+                "in_progress": self.in_progress,
+                "game_ended": self.game_ended,
+                "winner": self.winner,
+                "created_at": self.created_at,
+                "challenge_type": self.challenge_type,
+                "rounds": self.rounds,
+                "round_winners": self.round_winners,
+                "current_round": self.current_round,
+                "player_turn":self.turn.get_player() if self.turn is not None else None,
+                "player_one_captured":self.player_one.get_player() if self.player_one is not None else None,
+                "player_two_captured":self.player_two.get_player() if self.player_two is not None else None,
+                "state": self.game.board.get_seeds() if self.game is not None else None
+            }

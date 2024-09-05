@@ -2,10 +2,11 @@ import { Route, Routes, useLocation } from "react-router-dom";
 import WithSubnavigation from "./components/common/Navbar";
 import CallToActionWithVideo from "./pages/Home";
 import Tournaments from "./pages/Tournaments";
-import GamePage from "./pages/GamePage";
 import Challenges from "./pages/Challenges";
 import LeaderBoard from "./pages/LeaderBoard";
 import SmallCentered from "./components/common/Footer";
+import Profile from "./pages/Profile";
+import CreativeAbout from "./pages/About";
 
 function App() {
 
@@ -27,6 +28,8 @@ function App() {
             <Route path="/tournaments" element={<Tournaments />} />
             <Route path="/leaderboard" element={<LeaderBoard />} />
             <Route path="/challenges" element={<Challenges />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/about" element={<CreativeAbout />} />
           </Routes>
         </main>
       </div>

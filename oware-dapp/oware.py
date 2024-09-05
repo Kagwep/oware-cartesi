@@ -117,6 +117,17 @@ def add_opponent(payload,sender):
     else:
         add_report(f"Failed to add opponent. Error: {result['error']}")
         return  "reject"
+    
+def add_opponent_tournament(payload,sender):
+
+    result = store.add_agent_opponent_tournament(sender, payload)
+
+    if result["success"]:
+        add_notice(f"opponnet {result['tournament_id']} was was added by {sender} ")
+        return "accept"
+    else:
+        add_report(f"Failed to add opponent. Error: {result['error']}")
+        return  "reject"
 
 def accept_challenge(payload,sender):
 
@@ -139,7 +150,18 @@ def spawn(payload,sender):
     else:
         add_report(f"Failed to start challenge. Error: {result['error']}")
         return "reject"
+    
+def tournament_chalenge_spawn(payload,sender):
 
+    result = store.tournament_start_challenge(sender, payload)
+
+    if result["success"]:
+        add_notice(f" Creator {sender} of challege {result['challenge_id']} has initialized the game")
+        return 'accept'
+    else:
+        add_report(f"Failed to start challenge. Error: {result['error']}")
+        return "reject"
+    
 def make_move(payload,sender):
 
     result = store.make_move(sender, payload)
@@ -207,7 +229,7 @@ def get_round_fixtures(payload):
         add_report(output["result"])
         return "accept"
     else:
-        add_report(f"Failed to make move. Error: {output['error']}")
+        add_report(f"Failed to get fixture. Error: {output['error']}")
         return  'reject'
     
 def get_round_fixture(payload):
@@ -233,9 +255,20 @@ def get_challenge(payload):
         add_report(f"Failed to Fetch Challenge. Error: {output['error']}")
         return  'reject'
     
+def get_player(payload):
+
+    output = store.get_player_leaderboard(payload)
+
+    if output["success"]:
+        add_report(output["result"])
+        return "accept"
+    else:
+        add_report(f"Failed to Fetch player. Error: {output['error']}")
+        return  'reject'
+    
 def get_tournament(payload):
 
-    output = store.get_tournament(payload)
+    output = store.get_tournament_client(payload)
 
     if output["success"]:
         add_report(output["result"])
@@ -273,6 +306,8 @@ advance_method_handlers = {
     'add_opponent':add_opponent,
     'make_move_tournament':make_move_tournament,
     'delegate_move':delegate_move,
+    "add_opponent_tournament":add_opponent_tournament,
+    'tournament_chalenge_spawn':tournament_chalenge_spawn
 }
 
 inspect_handler_methods = {
@@ -284,6 +319,7 @@ inspect_handler_methods = {
     'get_all_tournaments': get_all_tournaments,
     'get_challenge':get_challenge,
     'get_tournament':get_tournament,
+    "get_player":get_player,
 }
 
 finish = {"status": "accept"}

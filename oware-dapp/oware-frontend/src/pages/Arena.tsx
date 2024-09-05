@@ -2,9 +2,9 @@ import React from 'react'
 import OwareGame from '../components/game/Oware'
 import { Challenge } from '../utils/types'
 
-const Arena = ({chalengeInfo}:{chalengeInfo: Challenge}) => {
+const Arena = ({chalengeInfo, selectedTournamentId}:{chalengeInfo: Challenge, selectedTournamentId: string | null}) => {
   return (
-    <OwareGame initialChallengeInfo={chalengeInfo} />
+    <OwareGame initialChallengeInfo={chalengeInfo} selectedTournamentId={selectedTournamentId}/>
   )
 }
 

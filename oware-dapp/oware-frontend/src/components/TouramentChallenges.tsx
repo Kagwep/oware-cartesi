@@ -5,7 +5,7 @@ import { CheckCircleIcon, TimeIcon, StarIcon } from '@chakra-ui/icons';
 import JoinTournamentFormModal from './forms/JoinTournamentForm';
 import { useAccount } from 'wagmi';
 import { v4 as uuidv4 } from 'uuid';
-import { sendInput } from '../utils';
+import { sendInput, shortenAddress } from '../utils';
 import { useWriteInputBoxAddInput } from "../hooks/generated";
 import Arena from '../pages/Arena';
 import { fetchGraphQLData } from '../utils/api';
@@ -61,81 +61,83 @@ const ListTournamentChallenges: React.FC<ListTournamentChallengesProps> = ({ tou
     }
   };
 
-//   const handleStartGame = (tournamentId: string, tournamentType: number) => {
-//     if (!isConnected) {
-//       toast({
-//         title: 'Wallet not connected',
-//         description: 'Please connect your wallet to start the game.',
-//         status: 'warning',
-//         duration: 5000,
-//         isClosable: true,
-//       });
-//     } else {
-//       onStartGame(tournamentId, tournamentType);
-//     }
-//   };
+  const handleStartGame = (tournamentId: string,challengeId: string, challengeType: number) => {
+    if (!isConnected) {
+      toast({
+        title: 'Wallet not connected',
+        description: 'Please connect your wallet to start the game.',
+        status: 'warning',
+        duration: 5000,
+        isClosable: true,
+      });
+    } else {
+      onStartGame(tournamentId, challengeType,challengeId);
+    }
+  };
 
-//   const onStartGame = async(tournamentId: string, tournamentType: number) => {
-//     // Logic to start the game (e.g., API call)
-//     console.log(`Starting game with Tournament ID: ${tournamentId}`);
+  const onStartGame = async(tournamentId: string, challengeType: number, challengeId: string) => {
+    // Logic to start the game (e.g., API call)
+    console.log(`Starting game with Challenge ID: ${challengeId} in tournamnet ${tournamentId}`);
 
-//     const dataToSend = {
-//       method: "spawn",
-//       tournament_id: parseInt(tournamentId, 10),
-//       tournament_type: tournamentType
-//     };
+    const dataToSend = {
+      method: "tournament_chalenge_spawn",
+      tournament_id: parseInt(tournamentId, 10),
+      challenge_id: parseInt(challengeId, 10),
+      challenge_type: challengeType
 
-//     const toastId = uuidv4();
+    };
 
-//     toast({
-//       id: toastId,
-//       title: "Starting Tournament",
-//       description: "Please wait...",
-//       status: "info",
-//       duration: null,
-//       isClosable: true,
-//     });
+    const toastId = uuidv4();
+
+    toast({
+      id: toastId,
+      title: "Starting Tournament",
+      description: "Please wait...",
+      status: "info",
+      duration: null,
+      isClosable: true,
+    });
 
    
 
 
-//     try {
-//       const result = await sendInput(JSON.stringify(dataToSend), writeContractAsync);
-//       if (result.success) {
+    try {
+      const result = await sendInput(JSON.stringify(dataToSend), writeContractAsync);
+      if (result.success) {
 
-//         toast.update(toastId, {
-//           title: "Tournament started",
-//           description: "Your Tournament started successfully.",
-//           status: "success",
-//           duration: 5000,
-//           isClosable: true,
-//         });
+        toast.update(toastId, {
+          title: "Tournament started",
+          description: "Your Tournament started successfully.",
+          status: "success",
+          duration: 5000,
+          isClosable: true,
+        });
 
-//       const response_data = await fetchGraphQLData(NOTICES_QUERY);
+      const response_data = await fetchGraphQLData(NOTICES_QUERY);
 
-//       console.log("----->",response_data)
+      console.log("----->",response_data)
 
-//                 // Wait for 20 seconds
-//        await new Promise(resolve => setTimeout(resolve, 5000));
+                // Wait for 20 seconds
+       await new Promise(resolve => setTimeout(resolve, 5000));
 
-//        await fetchTournaments()
+       await fetchTournaments()
 
-//         // Additional success handling (e.g., reset form, close modal, etc.)
-//       } else {
-//         throw new Error("Failed to start Tournament");
-//       }
-//     } catch (error) {
-//       console.error("Error start Tournament:", error);
-//       toast.update(toastId, {
-//         title: "Error",
-//         description: "Failed to start Tournament. Please try again.",
-//         status: "error",
-//         duration: 5000,
-//         isClosable: true,
-//       });
-//       // Additional error handling if needed
-//     }
-//   };
+        // Additional success handling (e.g., reset form, close modal, etc.)
+      } else {
+        throw new Error("Failed to start Tournament");
+      }
+    } catch (error) {
+      console.error("Error start Tournament:", error);
+      toast.update(toastId, {
+        title: "Error",
+        description: "Failed to start Tournament. Please try again.",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
+      // Additional error handling if needed
+    }
+  };
 
   const isCreator = (creatorAddress: string) => {
     return address && creatorAddress.toLowerCase() === address.toLowerCase();
@@ -175,20 +177,21 @@ const ListTournamentChallenges: React.FC<ListTournamentChallengesProps> = ({ tou
 
   
 
-  const handleGoToArena = (challenge: Challenge) => {
+  const handleGoToArena = (challenge: Challenge,tournament_id: string | null) => {
     setSelectedChallenge(challenge);
+    setSelectedTournamentId(tournament_id)
   };
 
-  if (selectedChallenge) {
+  if (selectedChallenge && selectedTournamentId) {
     
-    return <Arena chalengeInfo={selectedChallenge} />;
+    return <Arena chalengeInfo={selectedChallenge} selectedTournamentId={selectedTournamentId} />;
   }
 
   return (
     <>
      <TournamentBanner tournament={tournament} />
      <VStack spacing={4} align="stretch" w="full" maxW="800px" mx="auto">
-      <Heading size="xl" mb={6} textAlign="center">Tournaments</Heading>
+      <Heading size="xl" mb={6} textAlign="center">Challenges</Heading>
       {tournament.challenges ? (
         Object.values(tournament.challenges).map((challenge: Challenge) => (
           <Box
@@ -251,33 +254,33 @@ const ListTournamentChallenges: React.FC<ListTournamentChallengesProps> = ({ tou
 
               )}
             </HStack>
-            {/* {!challenge.in_progress && !challenge.game_ended && challenge.opponent && isCreator(challenge.creator[1]) && (
+            {challenge.challenge_type === 3 && !challenge.in_progress && !challenge.game_ended && challenge.opponent && isCreator(tournament.creator) && (
               <Button
                 bg="orange.900"
                 size="sm"
                 color={'white'}
                 leftIcon={<StarIcon />}
-                onClick={() => handleStartGame(challenge.challenge_id, challenge.challenge_type)}
+                onClick={() => handleStartGame(tournament.tournament_id, challenge.challenge_id, challenge.challenge_type)}
                 mt={2}
                 mb={2}
               >
                 Start Game
               </Button>
-            )} */}
+            )}
 
           {challenge.in_progress && (
             <Button
              bg="orange.900"
              size="sm"
               color={'white'}
-              onClick={() => handleGoToArena(challenge)}
+              onClick={() => handleGoToArena(challenge,tournament.tournament_id)}
               mt={2}
               mb={2}
             >
               Go to Arena
             </Button>
           )}
-            <Text mb={2}>Winner: <span className='text-cyan-500'>{challenge.winner?.address || 'N/A'}</span></Text>
+            <Text mb={2}>Winner: <span className='text-cyan-500'>{challenge.winner?.address || 'N/A'}</span> -  <span className='text-cyan-200'> {challenge.winner?.name}</span></Text>
 
             {
               challenge.state ? (

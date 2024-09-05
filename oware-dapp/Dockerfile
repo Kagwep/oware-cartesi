@@ -6,6 +6,11 @@ ADD https://github.com/cartesi/machine-emulator-tools/releases/download/v${MACHI
 RUN dpkg -i /machine-emulator-tools-v${MACHINE_EMULATOR_TOOLS_VERSION}.deb \
   && rm /machine-emulator-tools-v${MACHINE_EMULATOR_TOOLS_VERSION}.deb
 
+  # Install tzdata and set the timezone to UTC
+RUN apt-get update && apt-get install -y tzdata && \
+ln -fs /usr/share/zoneinfo/Etc/UTC /etc/localtime && \
+dpkg-reconfigure -f noninteractive tzdata
+
 LABEL io.cartesi.rollups.sdk_version=0.6.2
 LABEL io.cartesi.rollups.ram_size=128Mi
 

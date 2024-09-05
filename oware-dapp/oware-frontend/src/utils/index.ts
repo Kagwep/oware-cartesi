@@ -3,6 +3,7 @@ import { useWriteInputBoxAddInput } from "../hooks/generated";
 import { stringToHex,hexToString } from "viem";
 import { dAppAddress, INSPECT_URL } from "../constants";
 import { UseToastOptions } from "@chakra-ui/react";
+import { Challenge } from "./types";
 
 
 export const sendInput = async (inputValue: string, writeContractAsync: Function) => {
@@ -40,3 +41,5 @@ export const shortenAddress = (address: string) => {
   export const formattedAddressCheck = (playerAddress: string, address:string) => {
     return !!(address && playerAddress.toLowerCase() === address.toLowerCase())
   };
+
+

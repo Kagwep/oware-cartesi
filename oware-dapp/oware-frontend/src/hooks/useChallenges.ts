@@ -35,14 +35,14 @@ export const useChallenges = () => {
 };
 
 
-export const useChallenge = (challengeId: string) => {
+export const useChallenge = (challengeId: string,selectedTournamentId: string | null) => {
   const [challenge, setChallenge] = useState<Challenge | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const { address } = useAccount();
 
   const fetchChallenge = useCallback(async () => {
-    if (!address || !challengeId) return;
+    if (!address || !challengeId || selectedTournamentId) return;
 
     setIsLoading(true);
     setError(null);

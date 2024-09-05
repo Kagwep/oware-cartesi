@@ -29,7 +29,8 @@ import {
   CannonJSPlugin,
   Tools,
   CreateTextShapePaths,
-  Texture
+  Texture,
+  ISceneLoaderAsyncResult
 } from "@babylonjs/core"
 import { AdvancedDynamicTexture, Button, Control, InputText, Rectangle, StackPanel, TextBlock } from '@babylonjs/gui/2D';
 import "@babylonjs/loaders/glTF";
@@ -47,6 +48,9 @@ import { hexToString } from 'viem';
 import sphereTexture from "../../../assets/nuttexture3.avif";
 import { useChallenge } from '../../hooks/useChallenges';
 import { useNavigate } from 'react-router-dom';
+import { shortenAddress } from '../../utils';
+import { GameInfoDisplay } from './GameInfoDisplay';
+import { useTournament } from '../../hooks/useTournaments';
 
 BabylonFileLoaderConfiguration.LoaderInjectedPhysicsEngine = CANNON ;
 window.CANNON = CANNON;
@@ -75,12 +79,14 @@ interface GameMeshes {
     [key: string]: AbstractMesh | AbstractMesh[] | null | object;
   }
   
-const OwareGame = ({ initialChallengeInfo }: {initialChallengeInfo: Challenge}) => {
+// before you start judging - I din't have enough time to cleanup
+const OwareGame = ({ initialChallengeInfo,selectedTournamentId }: {initialChallengeInfo: Challenge, selectedTournamentId: string | null}) => {
 
     
 
     const [challengeInfo, setChallengeInfo] = useState<Challenge>(initialChallengeInfo);
-    const { challenge, isLoading, error, refetch } = useChallenge(challengeInfo.challenge_id);
+    const { challenge, isLoading, error, refetch } = useChallenge(challengeInfo.challenge_id,selectedTournamentId);
+    const tourn = useTournament(selectedTournamentId)
     const [isPolling, setIsPolling] = useState(false);
 
     const canvasRef = useRef(null);
@@ -109,9 +115,15 @@ const OwareGame = ({ initialChallengeInfo }: {initialChallengeInfo: Challenge}) 
       const gameInfoPanelRef = useRef<StackPanel| null>(null);
       const guiContainerRef = useRef<Rectangle| null>(null);
       const statusTextRef = useRef<TextBlock | null>(null);
+      const addPlayerInfoTextRef = useRef<TextBlock | null>(null);
+      const addInfoTextRef = useRef<TextBlock | null>(null);
       const advancedTextureRef = useRef<AdvancedDynamicTexture| null>(null);
+      const addedSpheresRef = useRef<Mesh[]>([]);
+      const capturedSpheresRef = useRef<Mesh[]>([]);
       const addedSpheres: Mesh[] = [];
       const capturedSpheres: Mesh[] = [];
+      const gameInfoDisplayRef = useRef<GameInfoDisplay | null>(null);
+      
 
       let sphere_count: number  = 1;
 
@@ -119,6 +131,8 @@ const OwareGame = ({ initialChallengeInfo }: {initialChallengeInfo: Challenge}) 
 
       const lowerHouses = ['House1', 'House2', 'House3', 'House4', 'House5', 'House6'];
       const upperHouses = ['House7', 'House8', 'House9', 'House10', 'House11', 'House12'];
+
+
 
     useEffect(() => {
         if (canvasRef.current) {
@@ -129,6 +143,17 @@ const OwareGame = ({ initialChallengeInfo }: {initialChallengeInfo: Challenge}) 
             const physicsPlugin = new CannonJSPlugin();
             scene.enablePhysics(null, physicsPlugin);
             scene.collisionsEnabled = true;
+
+            scene.fogMode = Scene.FOGMODE_EXP;
+            scene.fogColor = new Color3(0.14, 0.39, 0.4);
+            scene.fogDensity = 0.01;
+
+            const skyDome = MeshBuilder.CreateSphere("skyDome", {diameter:10000, segments:32}, scene);
+            const skyMaterial = new StandardMaterial("skyMaterial", scene);
+            skyMaterial.backFaceCulling = false;
+            skyMaterial.disableLighting = true;
+            skyMaterial.emissiveTexture = new Texture("sky2.jpg", scene);
+            skyDome.material = skyMaterial;
 
             // Camera setup
             const camera = new ArcRotateCamera("camera", -Math.PI / 2, Math.PI / 3, 15, Vector3.Zero(), scene);
@@ -147,31 +172,29 @@ const OwareGame = ({ initialChallengeInfo }: {initialChallengeInfo: Challenge}) 
 
             camera.panningSensibility = 0;
 
-            if (sceneRef.current) {
-                cleanupGameState();
-                setGameState(scene, camera)
-                
-            
-            }
- 
-            sceneRef.current = scene;
-            
-  
+    
 
+            SceneLoader.ImportMeshAsync("", "assets/", `board.glb`, scene).then((result) => {
+     
+              if (sceneRef.current) {
+                  //cleanupGameState();
+                  setGameState(scene, camera,result);
+              }
+          });
+
+           
+            sceneRef.current = scene;
+
+            
             // Light
            let light =  new HemisphericLight("light", new Vector3(0, 1, 0), scene);
 
            light.intensity = 0.7
 
-       
-
-           
-
-
-
         
             engine.runRenderLoop(() => {
                 scene.render();
+               // cleanupGameState()
             });
 
             const handleResize = () => {
@@ -185,13 +208,81 @@ const OwareGame = ({ initialChallengeInfo }: {initialChallengeInfo: Challenge}) 
                 engine.dispose();
             };
         }
-    }, [challengeInfo]);
+    }, []);
+
+    useEffect(() => {
+
+        if(sceneRef.current && gameMeshesRef.current.houses.length > 0 && gameMeshesRef.current.houseDisplays.length > 0 ){
+          createSeedsAndUpdateDisplays(challengeInfo.state);
+        
+          //Set up house picking
+        setupHousePicking();
+    
+        updatePlayerTurnDisplays(gameMeshesRef.current.playerTurnDisplays)
+
+        if (gameMeshesRef.current.capturedDisplays["home1"] && gameMeshesRef.current.capturedDisplays["home2"]) {
+     
+          const isPlayerScreenOwner1 = address && formattedAddressCheck(challengeInfo.player_one_captured.address, address);
+
+          function getPlayerData(isPlayer1: boolean | undefined) {
+              return isPlayer1 ? challengeInfo.player_one_captured : challengeInfo.player_two_captured;
+          }
+          
+          function updateHomeDisplay(mesh: AbstractMesh, isOwnHome: boolean) {
+              const playerData = getPlayerData(isPlayerScreenOwner1);
+              const opponentData = getPlayerData(!isPlayerScreenOwner1);
+              const dataToDisplay = isOwnHome ? playerData : opponentData;
+              updateHouseCapturedDisplay(mesh, dataToDisplay.captured.toString());
+          }
+          
+          updateHomeDisplay(gameMeshesRef.current.capturedDisplays["home1"],false);
+          updateHomeDisplay(gameMeshesRef.current.capturedDisplays["home2"],true);
+      }
+
+      if (gameMeshesRef.current.capturedHouses["captured1"] && gameMeshesRef.current.capturedHouses["captured2"]) {
+
+        const isPlayerScreenOwner1 = address && formattedAddressCheck(challengeInfo.player_one_captured.address, address);
+
+        function getPlayerCaptured(isPlayer1: boolean | undefined) {
+            return isPlayer1 ? challengeInfo.player_one_captured.captured : challengeInfo.player_two_captured.captured;
+        }
+
+        function updatePlayerCapturedDisplay(mesh: AbstractMesh, isClosestToScreen: boolean) {
+            const screenOwnerCaptured = getPlayerCaptured(isPlayerScreenOwner1);
+            const opponentCaptured = getPlayerCaptured(!isPlayerScreenOwner1);
+            const capturedToDisplay = isClosestToScreen ? screenOwnerCaptured : opponentCaptured;
+
+            if (capturedToDisplay > 0){
+                for (let i = 0; i < capturedToDisplay; i++) {
+                    addSphereInsideMesh(mesh,`seedNamec${sphere_count}`,sphere_count,true,false);
+                    sphere_count += 1
+                 }
+                
+            }
+        }
+
+        updatePlayerCapturedDisplay(gameMeshesRef.current.capturedHouses["captured1"], false);
+        updatePlayerCapturedDisplay(gameMeshesRef.current.capturedHouses["captured2"], true);
+         
+
+    } 
+
+    if(gameInfoDisplayRef.current){
+      gameInfoDisplayRef.current.updateGameInfo(challengeInfo);
+    }
+    
+        }
+
+    },[challengeInfo])
 
 
-    const setGameState = (scene: Scene, camera: any) => {
+    
+
+
+    const setGameState = (scene: Scene, camera: any,result: ISceneLoaderAsyncResult) => {
 
                     // Load the GLB model (game board)
-                    SceneLoader.ImportMeshAsync("", "assets/", `board.glb`, scene).then((result) => {
+                 
                         const board = result.meshes[0];
                         board.position = new Vector3(0, 0, 0);
                         board.checkCollisions = true;
@@ -235,12 +326,24 @@ const OwareGame = ({ initialChallengeInfo }: {initialChallengeInfo: Challenge}) 
                                                             // If the above doesn't work, try coloring vertices directly
                                 mesh.physicsImpostor = new PhysicsImpostor(mesh, PhysicsImpostor.MeshImpostor, { mass: 0, restitution: 0.1 }, scene);
         
-                                gameMeshesRef.current.houses.push(mesh);
+                                const isMeshAlreadyAdded = gameMeshesRef.current.houses.some(
+                                  existingMesh => existingMesh.uniqueId === mesh.uniqueId
+                              );
+                          
+                              if (!isMeshAlreadyAdded) {
+                                  gameMeshesRef.current.houses.push(mesh);
+                              }
                                 
                             } else if (mesh.name.match(/^House\d+D$/)) {
                                 
                                 mesh.isPickable = false
-                                gameMeshesRef.current.houseDisplays.push(mesh);
+                                const isDisplayMeshAlreadyAdded = gameMeshesRef.current.houseDisplays.some(
+                                  existingMesh => existingMesh.uniqueId === mesh.uniqueId
+                              );
+                          
+                              if (!isDisplayMeshAlreadyAdded) {
+                                  gameMeshesRef.current.houseDisplays.push(mesh);
+                              }
                             } else if (mesh.name === "player1" || mesh.name === "player2") {
                                 mesh.isPickable = false
                                 gameMeshesRef.current.playerNames[mesh.name] = mesh;
@@ -292,7 +395,7 @@ const OwareGame = ({ initialChallengeInfo }: {initialChallengeInfo: Challenge}) 
 
                                     if (capturedToDisplay > 0){
                                         for (let i = 0; i < capturedToDisplay; i++) {
-                                            addSphereInsideMesh(mesh,`Captured${sphere_count}`,sphere_count,true,false);
+                                            addSphereInsideMesh(mesh,`seedNamec${sphere_count}`,sphere_count,true,false);
                                             sphere_count += 1
                                          }
                                         
@@ -372,69 +475,10 @@ const OwareGame = ({ initialChallengeInfo }: {initialChallengeInfo: Challenge}) 
         
                         // Use the bounding sphere to limit camera movement
                         camera.setTarget(boundingSphere);
-                    });
-        
-                                // Define challenge types
-                    const challengeTypes = [
-                        { label: 'User vs User', value: 1 },
-                        { label: 'User vs AI', value: 2 },
-                        { label: 'AI vs AI', value: 3 },
-                    ];
-                    
-                    // Function to get challenge type label
-                    const getChallengeTypeLabel = (value: number): string => {
-                        const challengeType = challengeTypes.find(type => type.value === value);
-                        return challengeType ? challengeType.label : 'Unknown';
-                    };
-        
                     
                     // Create GUI
                     const advancedTexture = AdvancedDynamicTexture.CreateFullscreenUI("UI");
-        
-                    // Challenge Info Panel
-                    const panel = new StackPanel();
-                    panel.width = "200px";
-                    panel.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_LEFT;
-                    panel.verticalAlignment = Control.VERTICAL_ALIGNMENT_TOP;
-                    advancedTexture.addControl(panel);
-
-                    advancedTextureRef.current = advancedTexture;
-        
-                    const addInfoText = (text: string, emoji: string) => {
-                        const textBlock = new TextBlock();
-                        textBlock.text = `${emoji} ${text}`;
-                        textBlock.color = "white";
-                        textBlock.fontSize = 14;
-                        textBlock.height = "30px";
-                        panel.addControl(textBlock);
-                    };
-        
-                    // Add challenge info to the panel
-                    addInfoText(`${challengeInfo.challenge_id}`, "Challenge 🆔: ");
-                    addInfoText(`${challengeInfo.creator[0]}`, "Creator 👤: ");
-                    addInfoText(`${challengeInfo.rounds}`, "Rounds 🔄: ");
-                    addInfoText(`${getChallengeTypeLabel(challengeInfo.challenge_type)}`, "C Type 🏆: ");
-                    addInfoText(`${challengeInfo.current_round}`, "Round📍: ");
-        
-                    // Player Info
-                    const playerInfoPanel = new StackPanel();
-                    playerInfoPanel.width = "200px";
-                    playerInfoPanel.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_RIGHT;
-                    playerInfoPanel.verticalAlignment = Control.VERTICAL_ALIGNMENT_TOP;
-                    advancedTexture.addControl(playerInfoPanel);
-        
-                    const addPlayerInfoText = (text: string, emoji: string) => {
-                        const textBlock = new TextBlock();
-                        textBlock.text = `${emoji} ${text}`;
-                        textBlock.color = "white";
-                        textBlock.fontSize = 14;
-                        textBlock.height = "30px";
-                        playerInfoPanel.addControl(textBlock);
-                    };
-        
-                    addPlayerInfoText(`Player 1: ${challengeInfo.creator[0] ? challengeInfo.creator[0] : 'Waiting...'}`, "🎮");
-                    addPlayerInfoText(`Player 2: ${challengeInfo.opponent[0] ? challengeInfo.opponent[0] : 'Waiting...'}`, "🎮");
-                    addPlayerInfoText(`Status: ${challengeInfo.in_progress ? "Game in Progress" : "Waiting for Players"}`, "🚦");
+                    gameInfoDisplayRef.current = new GameInfoDisplay(advancedTexture);
         
                     // Game Info
                     const gameInfoPanel = new StackPanel();
@@ -461,7 +505,7 @@ const OwareGame = ({ initialChallengeInfo }: {initialChallengeInfo: Challenge}) 
     // Dispose of all meshes
     Object.values(gameMeshesRef.current).forEach(mesh => {
       if (Array.isArray(mesh)) {
-        mesh.forEach(m => m?.dispose());
+        mesh.forEach((m) => m?.dispose());
       } else if (mesh instanceof Mesh) {
         mesh.dispose();
       }
@@ -493,6 +537,7 @@ const OwareGame = ({ initialChallengeInfo }: {initialChallengeInfo: Challenge}) 
     highlightedHouseRef.current = null;
   };
 
+
     const updateBoundingInfo = (mesh: Mesh) => {
         if (mesh.geometry) {
             const vertexData = VertexData.ExtractFromMesh(mesh);
@@ -519,8 +564,27 @@ const OwareGame = ({ initialChallengeInfo }: {initialChallengeInfo: Challenge}) 
         mesh.computeWorldMatrix(true);
     };
     
+    const disposeSeedMeshes = () => {
+      if (sceneRef.current) {
+          const meshesToDispose = sceneRef.current.meshes.filter(mesh => 
+              mesh.name.toLowerCase().includes('seedname') 
+          );
+          
+          meshesToDispose.forEach(mesh => {
+              mesh.dispose();
+          });
+
+          console.log(`Disposed ${meshesToDispose.length} meshes containing "seedName"`);
+      }
+  };
+
     const createSeedsAndUpdateDisplays = (state: number[]) => {
-        if (!sceneRef.current) return;
+        if (!sceneRef.current || !gameMeshesRef.current.houses || !gameMeshesRef.current.houseDisplays) return;
+
+        console.log(sceneRef.current.meshes)
+        disposeSeedMeshes()
+        console.log(sceneRef.current.meshes)
+      
 
         const playerOne = challengeInfo.player_one_captured.address 
 
@@ -554,7 +618,7 @@ const OwareGame = ({ initialChallengeInfo }: {initialChallengeInfo: Challenge}) 
             new_seed_state = [...statePartOne.reverse(), ...statePartTwo.reverse()]
         }
 
-        console.log(gameMeshesRef.current.houses)
+        console.log(gameMeshesRef.current)
         console.log(state)
         console.log(new_seed_state)
 
@@ -563,6 +627,9 @@ const OwareGame = ({ initialChallengeInfo }: {initialChallengeInfo: Challenge}) 
 
             const house = gameMeshesRef.current.houses[index];
             const houseDisplay = gameMeshesRef.current.houseDisplays[index];
+
+            console.log(house)
+            console.log(houseDisplay)
             
     
             // if (!house.getBoundingInfo) {
@@ -840,7 +907,8 @@ const OwareGame = ({ initialChallengeInfo }: {initialChallengeInfo: Challenge}) 
         } 
 
         if (!capture){
-            addedSpheres.push(newSphere);
+             addedSpheres.push(newSphere);
+     
            } else{
             capturedSpheres.push(newSphere);
             
@@ -950,6 +1018,8 @@ const OwareGame = ({ initialChallengeInfo }: {initialChallengeInfo: Challenge}) 
                                     isClosable: true,
                                 });
 
+                                return
+
                             }
 
                             makeMove(`House${actualHouse}`)
@@ -999,11 +1069,18 @@ const OwareGame = ({ initialChallengeInfo }: {initialChallengeInfo: Challenge}) 
     };
 
     useEffect(() => {
-        if (challenge) {
+        if (challenge && !selectedTournamentId) {
 
           setChallengeInfo(challenge);
         }
-      }, [challenge]);
+
+        if (tourn && tourn.tournament && selectedTournamentId) {
+
+          setChallengeInfo(tourn.tournament.challenges[parseInt(initialChallengeInfo.challenge_id)]);
+        }
+
+
+      }, [challenge,tourn?.tournament]);
 
     function addPhysicsAggregate(meshe: TransformNode) {
         const res = new PhysicsAggregate(
@@ -1018,10 +1095,17 @@ const OwareGame = ({ initialChallengeInfo }: {initialChallengeInfo: Challenge}) 
 
     const makeMove = async (selectedHouse: string) => {
 
-        const dataToSend = {
+      
+
+        const dataToSend = !selectedTournamentId ? {
             method: "make_move",
             challenge_id: parseInt(challengeInfo.challenge_id),
              house: selectedHouse
+          }:{
+            method: "make_move_tournament",
+            tournament_id: parseInt(selectedTournamentId),
+            challenge_id: parseInt(challengeInfo.challenge_id),
+            house: selectedHouse
           };
 
           const toastId = uuidv4();
@@ -1152,40 +1236,79 @@ const OwareGame = ({ initialChallengeInfo }: {initialChallengeInfo: Challenge}) 
               intervalId = null;
               setIsPolling(false);
             }
-            inspect(JSON.stringify({
-              method: "get_challenge",
-              challenge_id: parseInt(challengeInfo.challenge_id)
-            }))
-              .then(result => {
-                try {
-                  const challengeResults = JSON.parse(hexToString(result[0].payload))["challenge"];
-                  console.log("results: ", challengeResults);
-                  return challengeResults;
-                } catch (e) {
-                  console.error("Error parsing results: ", e);
-                  throw e;
-                }
-              })
-              .then(challengeResults => {
-  
-                const player  = (currentPlayerAddress &&  (challengeResults[0].player_turn.address).toLowerCase() !== currentPlayerAddress.toLowerCase())
-                if (player) {
-                  return refetch().then(() => {
-                    console.log("Game state updated after move detected");
-                    if (challengeInfo.current_round < challengeResults.current_round){
-                      updateRoundWinner(challengeResults, currentPlayerAddress)
-                    }else{
-                      updateWinner(challengeResults,currentPlayerAddress);
-                    }
-                  });
-                }
-              })
-              .catch(error => {
-                console.error("Error in pollForMove: ", error);
-              });
-            return;
+            if (!selectedTournamentId){
+              inspect(JSON.stringify({
+                method: "get_challenge",
+                challenge_id: parseInt(challengeInfo.challenge_id)
+              }))
+                .then(result => {
+                  try {
+                    const challengeResults = JSON.parse(hexToString(result[0].payload))["challenge"];
+                    console.log("results: ", challengeResults);
+                    return challengeResults;
+                  } catch (e) {
+                    console.error("Error parsing results: ", e);
+                    throw e;
+                  }
+                })
+                .then(challengeResults => {
+    
+                  const player  = (currentPlayerAddress &&  (challengeResults[0].player_turn.address).toLowerCase() !== currentPlayerAddress.toLowerCase())
+                  if (player) {
+                    return refetch().then(() => {
+                      console.log("Game state updated after move detected");
+                      if (challengeInfo.current_round < challengeResults.current_round){
+                        updateRoundWinner(challengeResults, currentPlayerAddress)
+                      }else{
+                        updateWinner(challengeResults,currentPlayerAddress);
+                      }
+                    });
+                  }
+                })
+                .catch(error => {
+                  console.error("Error in pollForMove: ", error);
+                });
+              return;
+            }else{
+              inspect(JSON.stringify({
+                method: "get_tournament",
+                tournament_id: parseInt(selectedTournamentId)
+              }))
+                .then(result => {
+                  try {
+                    const tournamentResults = JSON.parse(hexToString(result[0].payload))["tournament"];
+                    console.log("results: ", tournamentResults);
+                    return tournamentResults;
+                  } catch (e) {
+                    console.error("Error parsing results: ", e);
+                    throw e;
+                  }
+                })
+                .then(tournamentResults => {
+    
+                  const player  = (currentPlayerAddress &&  (tournamentResults[0].challenges[parseInt(challengeInfo.challenge_id)].player_turn.address).toLowerCase() !== currentPlayerAddress.toLowerCase())
+                  if (player) {
+                    return refetch().then(() => {
+                      console.log("Game state updated after move detected");
+                      if (challengeInfo.current_round < tournamentResults[0].challenges[parseInt(challengeInfo.challenge_id)].current_round){
+                        updateRoundWinner(tournamentResults[0].challenges[parseInt(challengeInfo.challenge_id)], currentPlayerAddress)
+                      }else{
+                        updateWinner(tournamentResults[0].challenges[parseInt(challengeInfo.challenge_id)],currentPlayerAddress);
+                      }
+                    });
+                  }
+                })
+                .catch(error => {
+                  console.error("Error in pollForMove: ", error);
+                });
+              return;
+            }
+
           }
-      
+
+
+          if(!selectedTournamentId){
+
           inspect(JSON.stringify({
             method: "get_challenge",
             challenge_id: parseInt(challengeInfo.challenge_id)
@@ -1224,6 +1347,47 @@ const OwareGame = ({ initialChallengeInfo }: {initialChallengeInfo: Challenge}) 
             .catch(error => {
               console.error("Error in pollForMove: ", error);
             });
+
+          }else if(selectedTournamentId && tourn){
+            inspect(JSON.stringify({
+              method: "get_tournament",
+              tournament_id: parseInt(selectedTournamentId)
+            }))
+              .then(result => {
+                try {
+                  const tournamentResults = JSON.parse(hexToString(result[0].payload))["tournament"];
+                  console.log("results: ", tournamentResults);
+                  return tournamentResults;
+                } catch (e) {
+                  console.error("Error parsing results: ", e);
+                  throw e;
+                }
+              })
+              .then(tournamentResults => {
+  
+                const player  = (currentPlayerAddress &&  (tournamentResults[0].challenges[parseInt(challengeInfo.challenge_id)].player_turn.address).toLowerCase() === currentPlayerAddress.toLowerCase())
+                if (player) {
+                  console.log("It's now your turn!");
+                  setIsPolling(false);
+                  if (intervalId !== null) {
+                    clearInterval(intervalId);
+                    intervalId = null;
+                  }
+                  return tourn.fetchTournament().then(() => {
+                    console.log("Game state updated after move detected");
+                    if (challengeInfo.current_round < tournamentResults[0].challenges[parseInt(challengeInfo.challenge_id)].current_round){
+                      updateRoundWinner(tournamentResults[0].challenges[parseInt(challengeInfo.challenge_id)], currentPlayerAddress)
+                    }else{
+                      updateWinner(tournamentResults[0].challenges[parseInt(challengeInfo.challenge_id)],currentPlayerAddress);
+                    }
+                    
+                  });
+                }
+              })
+              .catch(error => {
+                console.error("Error in pollForMove: ", error);
+              });
+          }
         };
       
         // Function to start polling

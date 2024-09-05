@@ -16,8 +16,17 @@ import {
   useColorModeValue,
 } from '@chakra-ui/react'
 import { Link } from 'react-router-dom'
+import ReactPlayer from 'react-player';
+import { useState } from 'react';
+import { Play, Pause } from 'lucide-react';
 
 export default function CallToActionWithVideo() {
+
+  const [playing, setPlaying] = useState(false);
+
+  const handlePlayPause = () => {
+    setPlaying(!playing);
+  };
   return (
     <Container maxW={'10xl'} bg={'black'}>
       <Stack
@@ -68,7 +77,8 @@ export default function CallToActionWithVideo() {
             Play Now
             </Button>
             </Link>
-            <Button
+         <Link to={'/about'}>
+         <Button
             rounded={'full'}
             size={'lg'}
             fontWeight={'normal'}
@@ -76,6 +86,7 @@ export default function CallToActionWithVideo() {
             leftIcon={<PlayIcon h={4} w={4} color={'gray.300'} />}>
             Game Rules
             </Button>
+         </Link>
         </Stack>
         </Stack>
         <Flex
@@ -93,36 +104,36 @@ export default function CallToActionWithVideo() {
             zIndex={-1}
             color={useColorModeValue('red.50', 'red.400')}
           />
-          <Box
-            position={'relative'}
-            height={'300px'}
-            rounded={'2xl'}
-            boxShadow={'2xl'}
-            width={'full'}
-            overflow={'hidden'}>
-            <IconButton
-              aria-label={'Play Button'}
-              variant={'ghost'}
-              _hover={{ bg: 'transparent' }}
-              icon={<PlayIcon w={12} h={12} />}
-              size={'lg'}
-              color={'white'}
-              position={'absolute'}
-              left={'50%'}
-              top={'50%'}
-              transform={'translateX(-50%) translateY(-50%)'}
-            />
-            <Image
-              alt={'Hero Image'}
-              fit={'cover'}
-              align={'center'}
-              w={'100%'}
-              h={'100%'}
-              src={
-                'https://images.unsplash.com/photo-1499951360447-b19be8fe80f5?ixlib=rb-1.2.1&ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&auto=format&fit=crop&w=800&q=80'
-              }
-            />
-          </Box>
+            <Box
+              position="relative"
+              height="400px"
+              rounded="2xl"
+              boxShadow="2xl"
+              width="full"
+              overflow="hidden"
+            >
+              <ReactPlayer
+                url="https://res.cloudinary.com/dydj8hnhz/video/upload/v1725551882/owkunb807pjwfkeyloi3.mp4"
+                width="100%"
+                height="100%"
+                playing={playing}
+                controls={false}
+              />
+              <IconButton
+                aria-label={playing ? 'Pause' : 'Play'}
+                variant="ghost"
+                icon={playing ? <Pause size={48} /> : <Play size={48} />}
+                size="lg"
+                color="white"
+                position="absolute"
+                left="50%"
+                top="50%"
+                transform="translate(-50%, -50%)"
+                onClick={handlePlayPause}
+                bg="rgba(0, 0, 0, 0.5)"
+                _hover={{ bg: "rgba(0, 0, 0, 0.7)" }}
+              />
+            </Box>
         </Flex>
       </Stack>
     </Container>

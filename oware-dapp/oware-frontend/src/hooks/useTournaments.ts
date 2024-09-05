@@ -35,7 +35,10 @@ export const useTournaments = () => {
 };
 
 
-export const useTournament = (tournamentId: string) => {
+export const useTournament = (tournamentId: string | null) => {
+
+  if(!tournamentId) return;
+
   const [tournament, setTournament] = useState<Tournament | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -71,5 +74,5 @@ export const useTournament = (tournamentId: string) => {
     fetchTournament();
   }, [fetchTournament]);
 
-  return { tournament, isLoading, error, refetch: fetchTournament };
+  return { tournament, isLoading, error,fetchTournament };
 };

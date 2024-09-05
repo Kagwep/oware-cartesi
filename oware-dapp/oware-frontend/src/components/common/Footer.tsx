@@ -70,7 +70,7 @@ export default function SmallCentered() {
         spacing={4}
         justify={'center'}
         align={'center'}>
-        <Logo />
+       
         <Stack direction={'row'} spacing={6}>
           <Box as="a" href={'#'}>
             Home

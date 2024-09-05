@@ -83,7 +83,7 @@ export type Notice = {
     tournament_id: string;
     no_of_players: number;
     creator: string;
-    players: PlayerOne[];
+    players: [string[]];
     in_progress: boolean;
     game_ended: boolean;
     winner: PlayerTwo | null;
@@ -98,4 +98,11 @@ export type Notice = {
     round: number;
     winners: PlayerTwo[];
     allowable_player_counts: number[];
+  }
+
+  export interface Leader {
+    playerName: string;
+    ethAddress: string;
+    score: number;
+    rankTitle: 'Beginner' | 'Intermediate' | 'Advanced' | 'Expert' | 'Legend' | null;
   }

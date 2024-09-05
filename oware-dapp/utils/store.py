@@ -4,15 +4,16 @@ from game_play.tournaments import OPlayer, Tournament
 from utils.utils import HexConverter
 from game_play.game.coordinate_house_map import coordinates_houses_map
 import json
-from game_play.leaderboard import Leaderboard
 import logging
 import os
 import pathlib
+from game_play.common import leader_board
 
 logging.basicConfig(level="INFO")
 logger = logging.getLogger(__name__)
 
 hexConverter = HexConverter()
+
 
 class Store:
     def __init__(self):
@@ -22,8 +23,8 @@ class Store:
         self.challenge_next_id = 0
         self.tournament_next_id = 0
         self.tournaments = {}
-        self.player_tournaments = {}
-        self.leader_board = Leaderboard()
+
+        
         self.model_addresses = self.load_model_addresses()
 
     def create_challenge(self, creator_address, challenge_data):
@@ -109,7 +110,7 @@ class Store:
         
     
 
-    def join_challenge(self, player_address, challenge_data):
+    def join_challenge(self, address, challenge_data):
 
         challenge_id = challenge_data.get("challenge_id")
 
@@ -128,7 +129,7 @@ class Store:
             }
 
         
-        if player_address == challenge.creator.address:
+        if address == challenge.creator.address:
             return {
             "success": False,
             "error": "Creator cannot join their own challenge"
@@ -144,8 +145,8 @@ class Store:
             }
 
         try:
-            challenge.add_opponent(name, player_address, model_name)
-            self.player_challenges[player_address] = challenge_id
+            challenge.add_opponent(name, address, model_name)
+            self.player_challenges[address] = challenge_id
 
             return {
                 "success": True,
@@ -216,7 +217,7 @@ class Store:
                 "error": f"Failed to add opponent to challenge: {str(e)}"
             }
         
-    def start_challenge(self,player_address,challenge_data):
+    def start_challenge(self,address,challenge_data):
 
         challenge_id = challenge_data.get("challenge_id")
         challenge_type = challenge_data.get("challenge_type")
@@ -238,7 +239,7 @@ class Store:
             }
 
 
-        if player_address != challenge.creator.address:
+        if address != challenge.creator.address:
             return {
                 "success": False,
                 "error": "Only the challenge creator can start the challenge"
@@ -254,7 +255,6 @@ class Store:
 
             if challenge_type in [CHALLENGE_TYPE_AI_VS_AI]:
                 challenge.spawn()
-                challenge.run_ai_vs_ai_match()
             else:
                 challenge.spawn()
             
@@ -270,7 +270,78 @@ class Store:
                 "error": f"Failed to start challenge: {str(e)}"
             }
 
-    def join_tournament(self, player_address, tournament_data):
+    def tournament_start_challenge(self, creator_address,tournament_data):
+
+        tournament_id =  tournament_data.get("tournament_id")
+
+        challenge_id = tournament_data.get("challenge_id")
+        challenge_type = tournament_data.get("challenge_type")
+
+        tournament = self.get_tournament(tournament_id)
+
+
+        if not tournament_id:
+            return {
+                "success": False,
+                "error": "Tournament ID is required"
+            }
+
+        if not tournament:
+            return {
+                "success": False,
+                "error": "Tournament not found"
+            }
+        
+
+        if not challenge_id:
+            return {
+                "success": False,
+                "error": "Challenge ID is required"
+            }
+
+        challenge = tournament.challenges.get(challenge_id)
+
+        if not challenge:
+            return {
+                "success": False,
+                "error": "Challenge not found"
+            }
+
+
+        if (creator_address != tournament.creator) or (challenge.challenge_type) != 3:
+            return {
+                "success": False,
+                "error": "Only the challenge creator can start the challenge or NotChallenge not Agent vs Agent"
+            }
+        
+        if not challenge.opponent:
+            return {
+                "success": False,
+                "error": "Cannot start challenge without an opponent"
+            }
+        
+        try:
+
+            if challenge_type in [CHALLENGE_TYPE_AI_VS_AI]:
+                result = challenge.spawn()
+                if result:
+                    if result["challenge_ended"]:
+                            tournament.update_tournament_state(challenge_id, result["challenge_winner"])
+            return {
+                "success": True,
+                "message": "Challenge started successfully",
+                "challenge_id": challenge_id
+            }
+        
+        except Exception as e:
+            return {
+                "success": False,
+                "error": f"Failed to start challenge: {str(e)}"
+            }
+
+
+
+    def join_tournament(self, address, tournament_data):
 
         tournament_id = tournament_data.get("tournament_id")
 
@@ -300,7 +371,7 @@ class Store:
             }
 
 
-        player = OPlayer(player_name, player_address, model_name)
+        player = OPlayer(player_name, address, model_name)
 
         if player in tournament.players:
             return {
@@ -309,6 +380,7 @@ class Store:
            }
         
         try:
+            
             tournament.join_tournament(player)
             return {
                 "success": True,
@@ -342,7 +414,7 @@ class Store:
                 "error": "Challenge not found"
             }
         
-        if sender != challenge.turn.player_address or not challenge.in_progress:
+        if sender != challenge.turn.address or not challenge.in_progress:
             return {
                 "success": False,
                 "error": "It's not your turn or the challenge is not in progress"
@@ -372,9 +444,6 @@ class Store:
 
             if result['challenge_ended']:
                 self.delete_player_from_active_challenge(challenge)
-                self.add_or_update_player(challenge.winner.name, challenge.winner.address, 100)
-                opponent = challenge.opponent if challenge.winner == challenge.creator else challenge.creator
-                self.add_or_update_player(opponent.name, opponent.address, 2)
 
             return {
                 "success": True,
@@ -408,7 +477,7 @@ class Store:
                 "error": "Challenge not found"
             }
         
-        if sender != challenge.turn.player_address or not challenge.in_progress:
+        if sender != challenge.turn.address or not challenge.in_progress:
             return {
                 "success": False,
                 "error": "It's not your turn or the challenge is not in progress"
@@ -428,11 +497,11 @@ class Store:
         
         model = None
 
-        if challenge.player_one.player_address == sender: 
+        if challenge.player_one.address == sender: 
         
             model = challenge.model_player_one 
 
-        elif challenge.player_two.player_address == sender:
+        elif challenge.player_two.address == sender:
 
             model = challenge.model_player_two
 
@@ -467,9 +536,6 @@ class Store:
 
             if result['challenge_ended']:
                 self.delete_player_from_active_challenge(challenge)
-                self.add_or_update_player(challenge.winner.name, challenge.winner.address, 100)
-                opponent = challenge.opponent if challenge.winner == challenge.creator else challenge.creator
-                self.add_or_update_player(opponent.name, opponent.address, 2)
 
             return {
                 "success": True,
@@ -512,9 +578,9 @@ class Store:
                 "error": "Tournament not found"
             }
         
-        challenge = self.tournaments.challenges.get(challenge_id)
+        challenge = tournament.challenges.get(challenge_id)
         
-        if sender != challenge.turn.player_address or not challenge.in_progress:
+        if sender != challenge.turn.address or not challenge.in_progress:
             return {
                 "success": False,
                 "error": "It's not your turn or the challenge is not in progress"
@@ -543,10 +609,8 @@ class Store:
             result = challenge.move(house)
 
             if result['challenge_ended']:
-                self.delete_player_from_active_challenge(challenge)
-                self.add_or_update_player(challenge.winner.name, challenge.winner.address, 100)
-                opponent = challenge.opponent if challenge.winner == challenge.creator else challenge.creator
-                self.add_or_update_player(opponent.name, opponent.address, 2)
+            
+                self.delete_player_from_active_tournament(tournament)
 
             return {
                 "success": True,
@@ -563,7 +627,6 @@ class Store:
     def add_agent_opponent_tournament(self,creator_address, tournament_data):
      
             tournament_id = tournament_data.get("tournament_id")
-            challenge_id = tournament_data.get("challenge_id")
             model_name = tournament_data.get("model")
 
             if not tournament_id:
@@ -593,21 +656,6 @@ class Store:
                     "error": "It's not your turn or the challenge is not in progress"
                 }
             
-
-            if not challenge_id:
-                return {
-                    "success": False,
-                    "error": "Challenge ID is required"
-                }
-
-            challenge = self.tournaments.challenges.get(challenge_id)
-            
-            if not challenge:
-                return {
-                    "success": False,
-                    "error": "Challenge not found"
-                }
-
 
             if not model_name:
                 return {
@@ -657,30 +705,35 @@ class Store:
     def get_tournament(self, tournament_id):
         return self.tournaments.get(tournament_id)
 
-    def add_player_challenge(self, player_address, challenge_id):
-        if player_address not in self.player_challenges:
-            self.player_challenges[player_address] = set()
-        self.player_challenges[player_address].add(challenge_id)
+    def add_player_challenge(self, address, challenge_id):
+        if address not in self.player_challenges:
+            self.player_challenges[address] = set()
+        self.player_challenges[address].add(challenge_id)
 
-    def add_player_tournament(self, player_address, tournament_id):
-        if player_address not in self.player_tournaments:
-            self.player_tournaments[player_address] = set()
-        self.player_tournaments[player_address].add(tournament_id)
+    def add_player_tournament(self, address, tournament_id):
+        if address not in self.player_tournaments:
+            self.player_tournaments[address] = set()
+        self.player_tournaments[address].add(tournament_id)
 
-    def get_player_challenges(self, player_address):
-        return self.player_challenges.get(player_address, set())
+    def get_player_challenges(self, address):
+        return self.player_challenges.get(address, set())
 
-    def get_player_tournaments(self, player_address):
-        return self.player_tournaments.get(player_address, set())
+    def get_player_tournaments(self, address):
+        return self.player_tournaments.get(address, set())
     
 
     def delete_player_from_active_challenge(self,challenge):
 
-        if self.player_challenges.get(challenge.opponet) is not None:
-            del self.player_challenges[challenge.opponet]
+        if self.player_challenges.get(challenge.opponent) is not None:
+            del self.player_challenges[challenge.opponent]
 
         if self.player_challenges.get(challenge.creator) is not None:
             del self.player_challenges[challenge.creator]
+
+    def delete_player_from_active_tournament(self,tournament):
+
+        if self.player_tournaments.get(tournament.creator) is not None:
+            del self.player_tournaments[tournament.creator]
 
     def get_all_challenges(self):
 
@@ -776,15 +829,41 @@ class Store:
             self.leaderboard.add_player(player_name, eth_address)
         self.leaderboard.update_score(eth_address, score_change)
 
-    def get_top_players(self,request_data):
+    def get_top_players(self):
 
-        N = request_data.get('N')
+        N = None
 
-        top_players = self.leader_board.get_top_players() if N is not None else self.leader_board.get_top_players(N)
+        top_players = leader_board.get_top_players() if N is not None else leader_board.get_top_players(N)
 
         output = json.dumps({"top_players": top_players})
 
         return output
+    
+    def get_player_leaderboard(self,player_data):
+
+        sender = player_data.get("player")
+
+        if not sender:
+            return {
+                "success": False,
+                "error": "Sender address is required"
+            }
+
+        player = leader_board.get_player(sender)
+
+        output = {}
+
+        if player:
+            output = player
+    
+        output = json.dumps({"player": player})
+
+        return {
+                "success": True,
+                "message": "player  fetched",
+                "result": output
+            }
+
     
     def get_round_fixtures(self,request_data):
         
@@ -868,10 +947,10 @@ class Store:
     def get_player_fixture(self, request_data):
         tournament_id = request_data.get('tournament_id')
         round_number = request_data.get('round_number')
-        player_address = request_data.get('player_address')
+        address = request_data.get('address')
 
         # Validate required fields
-        if not all([tournament_id, round_number,player_address]):
+        if not all([tournament_id, round_number,address]):
             return {
                 "success": False,
                 "error": "Missing required fields:  tournament id or round number or player address"
@@ -887,7 +966,7 @@ class Store:
         
         try:
             
-            fixture = tournament.get_player_fixture(round_number,player_address)
+            fixture = tournament.get_player_fixture(round_number,address)
 
             output = json.dumps({"player_fixture": fixture})
 
@@ -925,15 +1004,15 @@ class Store:
                 "creator" : tournament.creator,
                 "players": tournament.players,
                 "in_progress":  tournament.in_progress,
-                "winner": tournament.tournament_winner,
+                "winner":tournament.tournament_winner.get_player() if tournament.tournament_winner else None,
                 "rounds_per_challenge":tournament.rounds_per_challenge,
                 "fixtures": tournament.fixtures,
                 "started_at":tournament.started_at,
                 "ended_at":tournament.ended_at,
-                "round_winners":tournament.round_winners,
+                "round_winners":{round_num: [winner.get_player() for winner in winners] for round_num, winners in tournament.round_winners.items()},
                 "active_round":tournament.active_round,
-                "challenges":tournament.challenges,
-                "winners":tournament.winners,
+                "challenges":{challenge_id: challenge.to_dict() for challenge_id, challenge in tournament.challenges.items()},
+                "winners":[winner.get_player() for winner in tournament.winners],
                 "allowable_player_counts":tournament.allowable_player_counts
             })
         
@@ -941,7 +1020,7 @@ class Store:
 
         return output
     
-    def get_tournament(self, tournament_data):
+    def get_tournament_client(self, tournament_data):
 
 
         tournament_id = tournament_data.get("tournament_id")
@@ -973,20 +1052,24 @@ class Store:
             "creator" : tournament.creator,
             "players": tournament.players,
             "in_progress":  tournament.in_progress,
-            "winner": tournament.tournament_winner,
+            "winner": tournament.tournament_winner.get_player() if tournament.tournament_winner else None,
             "rounds_per_challenge":tournament.rounds_per_challenge,
             "fixtures": tournament.fixtures,
             "started_at":tournament.started_at,
             "ended_at":tournament.ended_at,
-            "round_winners":tournament.round_winners,
+            "round_winners":{round_num: [winner.get_player() for winner in winners] for round_num, winners in tournament.round_winners.items()},
             "active_round":tournament.active_round,
-            "challenges":tournament.challenges,
-            "winners":tournament.winners,
+            "challenges":{challenge_id: challenge.to_dict() for challenge_id, challenge in tournament.challenges.items()},
+            "winners":[winner.get_player() for winner in tournament.winners],
             "allowable_player_counts":tournament.allowable_player_counts
         })
         
         output = json.dumps({"tournament": tournaments_list})
-
-        return output
+    
+        return {
+            "success": True,
+            "message": "tournament fetched",
+            "result": output
+        }
 
    

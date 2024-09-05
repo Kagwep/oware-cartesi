@@ -181,7 +181,7 @@ const ListChallenges: React.FC<ListChallengesProps> = ({ challenges, onJoinChall
   };
 
   if (selectedChallenge) {
-    return <Arena chalengeInfo={selectedChallenge} />;
+    return <Arena chalengeInfo={selectedChallenge} selectedTournamentId={null}  />;
   }
 
   return (
