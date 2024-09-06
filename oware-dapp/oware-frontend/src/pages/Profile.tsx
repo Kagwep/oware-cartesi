@@ -19,9 +19,9 @@ import {
 import { useLeader } from '../hooks/useLeader';
 import { useAccount } from 'wagmi';
 import { StarIcon } from '@chakra-ui/icons';
-import { Leader } from '../utils/types';
+import { Profile  as Leader} from '../utils/types';
 
-const RankDisplay = ({ rankTitle }: { rankTitle: Leader['rankTitle'] }) => {
+const RankDisplay = ({ rank_title }: { rank_title: Leader['rank_title'] | null }) => {
   const rankColors = {
     Beginner: 'gray',
     Intermediate: 'green',
@@ -38,15 +38,15 @@ const RankDisplay = ({ rankTitle }: { rankTitle: Leader['rankTitle'] }) => {
     Legend: 5
   };
 
-  if (!rankTitle) return null;
+  if (!rank_title) return null;
 
   return (
     <HStack>
-      {[...Array(starCount[rankTitle])].map((_, i) => (
-        <StarIcon key={i} color={rankColors[rankTitle]} />
+      {[...Array(starCount[rank_title as keyof typeof starCount])].map((_, i) => (
+        <StarIcon key={i} color={rankColors[rank_title as keyof typeof rankColors]} />
       ))}
-      <Text color={rankColors[rankTitle]} fontWeight="bold">
-        {rankTitle}
+      <Text color={rankColors[rank_title as keyof typeof rankColors]} fontWeight="bold">
+        {rank_title}
       </Text>
     </HStack>
   );
@@ -72,6 +72,8 @@ const Profile = () => {
     );
   }
 
+  console.log(leader)
+
   return (
     <Stack p="4" boxShadow="lg" m="4" borderRadius="sm" bg="gray.800" color="white">
     <Box
@@ -83,13 +85,13 @@ const Profile = () => {
     >
       <VStack spacing={6} align="stretch">
         <HStack spacing={6}>
-          <Avatar size="2xl" name={leader?.playerName || 'Anonymous'} />
+          <Avatar size="2xl" name={leader?.player_name || 'Anonymous'} />
           <VStack align="start" spacing={2}>
-            <Heading size="2xl">{leader?.playerName || 'Anonymous'}</Heading>
+            <Heading size="2xl">{leader?.player_name || 'Anonymous'}</Heading>
             <Badge colorScheme="green" fontSize="md" p={2} borderRadius="full">
               {address ? `${address.slice(0, 6)}...${address.slice(-4)}` : 'No Address'}
             </Badge>
-            <RankDisplay rankTitle={leader?.rankTitle ?? null} />
+            <RankDisplay rank_title={leader?.rank_title ?? null} />
           </VStack>
         </HStack>
 
@@ -102,16 +104,16 @@ const Profile = () => {
           </Stat>
           <Stat>
             <StatLabel>Rank</StatLabel>
-            <StatNumber>{leader?.rankTitle || 'Unranked'}</StatNumber>
+            <StatNumber>{leader?.rank_title || 'Unranked'}</StatNumber>
           </Stat>
         </StatGroup>
 
         <Divider />
 
         <VStack align="start" spacing={2}>
-          <Heading size="md">Account Details</Heading>
-          <Text><strong>Address:</strong> {address || 'Not Connected'}</Text>
-          <Text><strong>Connection Status:</strong> {isConnected ? 'Connected' : 'Not Connected'}</Text>
+          <Heading size="md" color={'cyan.500'}>Account Details</Heading>
+          <Text><strong className='text-purple-500'> Address:</strong> {address || 'Not Connected'}</Text>
+          <Text><strong>Connection Status:</strong><span className='text-green-500'> {isConnected ? 'Connected' : 'Not Connected'}</span></Text>
         </VStack>
       </VStack>
     </Box>

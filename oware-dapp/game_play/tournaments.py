@@ -5,6 +5,7 @@ from .challenge import Challenge
 from game_play.game.constants import MODEL_ADDRESSES
 from datetime import datetime, timezone
 import logging
+from .common import leader_board
 
 logging.basicConfig(level="INFO")
 logger = logging.getLogger(__name__)
@@ -115,6 +116,7 @@ class Tournament:
             self.tournament_winner = winners[0]
             self.ended_at = datetime.now(timezone.utc).timestamp()
             self.in_progress = False
+            leader_board.add_or_update_tournament_player(winners[0].name, winners[0].address, 50)
             return
 
         self.active_round += 1

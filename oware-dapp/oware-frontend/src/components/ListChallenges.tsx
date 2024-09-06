@@ -12,6 +12,7 @@ import { fetchGraphQLData } from '../utils/api';
 import { NOTICES_QUERY } from '../utils/query';
 import { useChallenges } from '../hooks/useChallenges';
 import AddOpponentChallengeFormModal from './forms/AddOpponentChallengeFormModal';
+import { shortenAddress } from '../utils';
 
 interface ListChallengesProps {
   challenges: Challenge[];
@@ -275,7 +276,7 @@ const ListChallenges: React.FC<ListChallengesProps> = ({ challenges, onJoinChall
               Go to Arena
             </Button>
           )}
-            <Text mb={2}>Winner: <span className='text-cyan-500'>{challenge.winner?.address || 'N/A'}</span></Text>
+            <Text mb={2}>Winner: <span className='text-cyan-500'>{challenge.winner.address ? (shortenAddress(challenge.winner.address) ) : ('N/A')}</span> - <span className='text-cyan-200'>{challenge.winner?.name}</span></Text>
 
             {
               challenge.state ? (

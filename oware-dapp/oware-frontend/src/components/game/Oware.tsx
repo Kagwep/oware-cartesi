@@ -1257,10 +1257,10 @@ const OwareGame = ({ initialChallengeInfo,selectedTournamentId }: {initialChalle
                   if (player) {
                     return refetch().then(() => {
                       console.log("Game state updated after move detected");
-                      if (challengeInfo.current_round < challengeResults.current_round){
-                        updateRoundWinner(challengeResults, currentPlayerAddress)
+                      if (challengeInfo.current_round < challengeResults[0].current_round){
+                        updateRoundWinner(challengeResults[0], currentPlayerAddress)
                       }else{
-                        updateWinner(challengeResults,currentPlayerAddress);
+                        updateWinner(challengeResults[0],currentPlayerAddress);
                       }
                     });
                   }
@@ -1335,10 +1335,10 @@ const OwareGame = ({ initialChallengeInfo,selectedTournamentId }: {initialChalle
                 }
                 return refetch().then(() => {
                   console.log("Game state updated after move detected");
-                  if (challengeInfo.current_round < challengeResults.current_round){
-                    updateRoundWinner(challengeResults, currentPlayerAddress)
+                  if (challengeInfo.current_round < challengeResults[0].current_round){
+                    updateRoundWinner(challengeResults[0], currentPlayerAddress)
                   }else{
-                    updateWinner(challengeResults,currentPlayerAddress);
+                    updateWinner(challengeResults[0],currentPlayerAddress);
                   }
                   
                 });

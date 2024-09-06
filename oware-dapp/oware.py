@@ -221,6 +221,15 @@ def get_top_players(payload):
 
     return "accept"
 
+def get_top_tournament_players(payload):
+
+    output = store.get_top_players_tournaments()
+
+    add_report(output)
+
+    return "accept"
+
+
 def get_round_fixtures(payload):
 
     output = store.get_round_fixtures(payload)
@@ -265,6 +274,19 @@ def get_player(payload):
     else:
         add_report(f"Failed to Fetch player. Error: {output['error']}")
         return  'reject'
+    
+
+def get_player_tournament_board(payload):
+
+    output = store.get_player_leaderboard_tournaments(payload)
+
+    if output["success"]:
+        add_report(output["result"])
+        return "accept"
+    else:
+        add_report(f"Failed to Fetch player. Error: {output['error']}")
+        return  'reject'
+    
     
 def get_tournament(payload):
 
@@ -313,6 +335,7 @@ advance_method_handlers = {
 inspect_handler_methods = {
     'get_all_challenges': get_all_challenges,
     'get_top_players':get_top_players,
+    'get_top_tournament_players':get_top_tournament_players,
     'get_round_fixtures':get_round_fixtures,
     'get_round_fixture':get_round_fixture,
     'get_player_fixture':get_player_fixture,
@@ -320,6 +343,7 @@ inspect_handler_methods = {
     'get_challenge':get_challenge,
     'get_tournament':get_tournament,
     "get_player":get_player,
+    "get_player_tournament":get_player_tournament_board,
 }
 
 finish = {"status": "accept"}

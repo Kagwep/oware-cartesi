@@ -327,6 +327,8 @@ class Store:
                 if result:
                     if result["challenge_ended"]:
                             tournament.update_tournament_state(challenge_id, result["challenge_winner"])
+                            
+                            
             return {
                 "success": True,
                 "message": "Challenge started successfully",
@@ -608,9 +610,9 @@ class Store:
             
             result = challenge.move(house)
 
-            if result['challenge_ended']:
+            # if result['challenge_ended']:
             
-                self.delete_player_from_active_tournament(tournament)
+            #     self.delete_player_from_active_tournament(tournament)
 
             return {
                 "success": True,
@@ -783,6 +785,8 @@ class Store:
                 "error": "Challenge not found"
             }
         
+        if challenge.winner is not None:
+                self.delete_player_from_active_challenge(challenge)
 
         challenge_list = []
 
@@ -839,6 +843,16 @@ class Store:
 
         return output
     
+    def get_top_players_tournaments(self):
+
+        N = None
+
+        top_players = leader_board.get_top_tournament_players() if N is not None else leader_board.get_top_tournament_players(N)
+
+        output = json.dumps({"top_players_tornament": top_players})
+
+        return output
+    
     def get_player_leaderboard(self,player_data):
 
         sender = player_data.get("player")
@@ -850,6 +864,31 @@ class Store:
             }
 
         player = leader_board.get_player(sender)
+
+        output = {}
+
+        if player:
+            output = player
+    
+        output = json.dumps({"player": player})
+
+        return {
+                "success": True,
+                "message": "player  fetched",
+                "result": output
+            }
+
+    def get_player_leaderboard_tournaments(self,player_data):
+
+        sender = player_data.get("player")
+
+        if not sender:
+            return {
+                "success": False,
+                "error": "Sender address is required"
+            }
+
+        player = leader_board.get_tournament_player(sender)
 
         output = {}
 
@@ -1045,6 +1084,9 @@ class Store:
 
 
         tournament = self.tournaments.get(tournament_id)
+
+        if tournament.winner is not None:
+            self.delete_player_from_active_tournament(tournament)
 
         tournaments_list.append({
             "tournament_id": tournament_id,

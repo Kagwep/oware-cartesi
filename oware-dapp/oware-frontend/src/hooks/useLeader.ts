@@ -2,11 +2,11 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAccount } from 'wagmi'; // Assuming you're using wagmi for account management
 import { stringToHex,hexToString } from "viem";
 import { inspect } from '../utils';
-import { Leader } from '../utils/types';
+import { Profile } from '../utils/types';
 
 
 export const useLeader = () => {
-    const [leader, setLeader] = useState<Leader | null>(null);
+    const [leader, setLeader] = useState<Profile | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<Error | null>(null);
     const { address } = useAccount();
@@ -25,7 +25,7 @@ export const useLeader = () => {
         try {
           leaderResults = JSON.parse(hexToString(leaderResults[0].payload))["player"];
           console.log("results: ",leaderResults);
-          setLeader(leaderResults[0]);
+          setLeader(leaderResults);
         } catch (e) {
           console.error("Error parsing results: ", e);
         }

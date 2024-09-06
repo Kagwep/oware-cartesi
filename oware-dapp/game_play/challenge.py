@@ -239,17 +239,21 @@ class Challenge:
             self.player_one_wins += 1
             self.round_winners[self.current_round] = winner
             leader_board.add_or_update_player(self.player_one.name, self.player_one.address, score=100)
+            leader_board.add_or_update_player(self.player_two.name, self.player_two.address, score=20)
             return True
         elif result == 2:
             winner = self.player_two.get_player()
             self.player_two_wins += 1
             self.round_winners[self.current_round] = winner
-            leader_board.add_or_update_player(self.player_two.name, self.player_two.address, score=20)
+            leader_board.add_or_update_player(self.player_two.name, self.player_two.address, score=100)
+            leader_board.add_or_update_player(self.player_one.name, self.player_one.address, score=20)
             return True
         else:
             if self.game.state.inprogress:
                 return False
             else:
+                leader_board.add_or_update_player(self.player_two.name, self.player_two.address, score=2)
+                leader_board.add_or_update_player(self.player_one.name, self.player_one.address, score=2)
                 return True
 
         
@@ -325,9 +329,22 @@ class Challenge:
         return result
     
     
-
-
-
+    def surrender(self,player):
+        self.winner =  self.player_one.get_player() if player == self.player_one.address else self.player_two.get_player()
+        result = 1 if player == self.player_one.address else 2
+        self.in_progress = False
+        self.game_ended = True
+        challenge_ended = True
+        challenge_winner = self.player_one if player == self.player_one.address else self.player_two
+        return {
+        "game_result": result,
+        "challenge_ended": challenge_ended,
+        "challenge_winner": challenge_winner,
+        "current_round": self.current_round,
+        "player_one_wins": self.player_one_wins,
+        "player_two_wins": self.player_two_wins,
+        "challenge_id": self.id
+        }
 
 
 

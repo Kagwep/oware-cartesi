@@ -100,9 +100,22 @@ export type Notice = {
     allowable_player_counts: number[];
   }
 
+
   export interface Leader {
-    playerName: string;
     ethAddress: string;
-    score: number;
-    rankTitle: 'Beginner' | 'Intermediate' | 'Advanced' | 'Expert' | 'Legend' | null;
+    leaderInfo: LeaderInfo;
   }
+
+
+  export interface LeaderInfo {
+    player_name: string;
+    score: number;
+    rank_title: string;
+  }
+
+  export interface Profile  {
+    player_name: string;
+    eth_address: string;
+    score: number;
+    rank_title: string;
+  };
