@@ -91,3 +91,7 @@ class State:
             self.player_one.captured += new_captured
 
         return self.set_winner()
+    
+    def handle_surrender(self,result):
+        self.update_progress()
+        self.result = result

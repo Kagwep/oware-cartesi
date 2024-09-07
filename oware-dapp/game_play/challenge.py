@@ -14,6 +14,7 @@ import logging
 from  pathlib import Path
 from .common import leader_board
 from datetime import datetime, timezone
+from collections import defaultdict
 
 
 logging.basicConfig(level="INFO")
@@ -121,8 +122,6 @@ class Challenge:
                 "challenge_ended": challenge_ended,
                 "challenge_winner": challenge_winner,
                 "current_round": self.current_round,
-                "player_one_wins": self.player_one_wins,
-                "player_two_wins": self.player_two_wins,
                 "challenge_id": self.id
                 }
 
@@ -184,6 +183,8 @@ class Challenge:
                     
                     result = self.game.state.update_capture_and_win(self.turn,player_seeds) 
 
+                    
+
         challenge_winner, challenge_ended = self.check_winner(result) 
 
         #logger.info(f"Current turn {self.turn.get_player()}")
@@ -222,8 +223,6 @@ class Challenge:
             "challenge_ended": challenge_ended,
             "challenge_winner": challenge_winner,
             "current_round": self.current_round,
-            "player_one_wins": self.player_one_wins,
-            "player_two_wins": self.player_two_wins,
             "challenge_id": self.id
         }
     
@@ -236,14 +235,12 @@ class Challenge:
         """Update the round winner based on the game result."""
         if result == 1:
             winner = self.player_one.get_player()
-            self.player_one_wins += 1
             self.round_winners[self.current_round] = winner
             leader_board.add_or_update_player(self.player_one.name, self.player_one.address, score=100)
             leader_board.add_or_update_player(self.player_two.name, self.player_two.address, score=20)
             return True
         elif result == 2:
             winner = self.player_two.get_player()
-            self.player_two_wins += 1
             self.round_winners[self.current_round] = winner
             leader_board.add_or_update_player(self.player_two.name, self.player_two.address, score=100)
             leader_board.add_or_update_player(self.player_one.name, self.player_one.address, score=20)
@@ -274,17 +271,29 @@ class Challenge:
             return None, False
 
     def determine_challenge_winner(self):
-        if self.player_one_wins > self.player_two_wins:
-            self.winner =  self.player_one.get_player()
-            self.in_progress = False
-            self.game_ended = True
-            return self.player_one
-        elif self.player_two_wins > self.player_one_wins:
-            self.winner = self.player_two.get_player()
-            self.in_progress = False
-            self.game_ended = True
-            return self.player_two
+        address_wins = defaultdict(int)
+        
+        for round_num, winner in self.round_winners.items():
+            address_wins[winner["address"]] += 1
+        
+        # Step 2: Find the address with the most wins
+        max_wins = max(address_wins.values(), default=0)
+        addresses_with_max_wins = [address for address, wins in address_wins.items() if wins == max_wins]
+        
+        # Step 3: Check for a tie
+        if len(addresses_with_max_wins) == 1:
+            # Get the player corresponding to the address with the most wins
+            winning_address = addresses_with_max_wins[0]
+            # Return the first player with this address
+            for winner in self.round_winners.values():
+                if winner["address"] == winning_address:
+                    player = self.player_one if self.player_one.address == winning_address else self.player_two
+                    self.winner =  winner
+                    self.in_progress = False
+                    self.game_ended = True
+                    return player
         else:
+            # Return None if there's a tie or no rounds
             return None
 
     def tiebreaker(self):
@@ -336,6 +345,7 @@ class Challenge:
         self.game_ended = True
         challenge_ended = True
         challenge_winner = self.player_one if player == self.player_one.address else self.player_two
+        self.game.state.handle_surrender(result)
         return {
         "game_result": result,
         "challenge_ended": challenge_ended,

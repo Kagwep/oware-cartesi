@@ -276,7 +276,14 @@ const ListChallenges: React.FC<ListChallengesProps> = ({ challenges, onJoinChall
               Go to Arena
             </Button>
           )}
-            <Text mb={2}>Winner: <span className='text-cyan-500'>{challenge.winner.address ? (shortenAddress(challenge.winner.address) ) : ('N/A')}</span> - <span className='text-cyan-200'>{challenge.winner?.name}</span></Text>
+            
+            {
+              challenge.winner ? (
+                <Text mb={2}>Winner: <span className='text-cyan-500'>{challenge.winner.address ? (shortenAddress(challenge.winner.address) ) : ('N/A')}</span> - <span className='text-cyan-200'>{challenge.winner?.name}</span></Text>
+              ): (
+                <Text></Text>
+              )
+            }
 
             {
               challenge.state ? (

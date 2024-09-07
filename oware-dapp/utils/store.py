@@ -50,7 +50,7 @@ class Store:
                 }
 
             # Additional validation for AI-related challenges
-            if challenge_type in [CHALLENGE_TYPE_USER_VS_AI, CHALLENGE_TYPE_AI_VS_AI] and not creator_model_name:
+            if challenge_type in [CHALLENGE_TYPE_AI_VS_AI] and not creator_model_name:
                 return {
                     "success": False,
                     "error": "Model name is required for AI-related challenges"
@@ -326,7 +326,7 @@ class Store:
                 result = challenge.spawn()
                 if result:
                     if result["challenge_ended"]:
-                            tournament.update_tournament_state(challenge_id, result["challenge_winner"])
+                        tournament.update_tournament_state(challenge_id, result["challenge_winner"])
                             
                             
             return {
@@ -610,9 +610,8 @@ class Store:
             
             result = challenge.move(house)
 
-            # if result['challenge_ended']:
-            
-            #     self.delete_player_from_active_tournament(tournament)
+            if result['challenge_ended']:
+                tournament.update_tournament_state(challenge_id, result["challenge_winner"])
 
             return {
                 "success": True,
@@ -726,11 +725,11 @@ class Store:
 
     def delete_player_from_active_challenge(self,challenge):
 
-        if self.player_challenges.get(challenge.opponent) is not None:
-            del self.player_challenges[challenge.opponent]
+        if self.player_challenges.get(challenge.opponent.address) is not None:
+            del self.player_challenges[challenge.opponent.address]
 
-        if self.player_challenges.get(challenge.creator) is not None:
-            del self.player_challenges[challenge.creator]
+        if self.player_challenges.get(challenge.creator.address) is not None:
+            del self.player_challenges[challenge.creator.address]
 
     def delete_player_from_active_tournament(self,tournament):
 
@@ -983,7 +982,100 @@ class Store:
                 "error": f"Failed to make move: {str(e)}"
             }
         
+    def surrender_in_challenge(self,sender,challenge_data):
+        
+        player = sender
+
+        challenge_id = challenge_data.get('challenge_id')
+
+        if not challenge_id:
+            return {
+                "success": False,
+                "error": "Challenge ID is required"
+            }
+        
+        challenge = self.challenges.get(challenge_id)
+        
+        if not challenge:
+            return {
+                "success": False,
+                "error": "Challenge not found"
+            }
+        
+        try:
+
+            result = challenge.surrender(player)
+
+            if result['challenge_ended']:
+                self.delete_player_from_active_challenge(challenge)
+
+            return {
+                "success": True,
+                "message": "Player surrendered",
+                "result": result
+            }
+        except Exception as e:
+            return {
+                "success": False,
+                "error": f"Failed to surrender: {str(e)}"
+            }
+        
+    def surrender_in_challenge_tournament(self,sender,tournament_data):
+
+        player = sender
+
+        tournament_id = tournament_data.get('tournament_id')
+        challenge_id = tournament_data.get('challenge_id')
+
+        if not tournament_id:
+                return {
+                    "success": False,
+                    "error": "Tournament ID is required"
+                }
+
+        tournament = self.get_tournament(tournament_id)
+            
+        if not tournament:
+            return {
+                "success": False,
+                "error": "Tournament not found"
+            }
+
+        if not challenge_id:
+            return {
+                "success": False,
+                "error": "Challenge ID is required"
+            }
+        
+        challenge = tournament.challenges.get(challenge_id)
+
+        if not challenge:
+            return {
+                "success": False,
+                "error": "Challenge not found"
+            }
+        
+        try:
+            
+            result = challenge.surrender(player)
+
+            if result['challenge_ended']:
+                tournament.update_tournament_state(challenge_id, result["challenge_winner"])
+
+            return {
+                "success": True,
+                "message": "Player surrendered",
+                "result": result
+            }
+        except Exception as e:
+            return {
+                "success": False,
+                "error": f"Failed to surrender: {str(e)}"
+            }
+        
+
     def get_player_fixture(self, request_data):
+
         tournament_id = request_data.get('tournament_id')
         round_number = request_data.get('round_number')
         address = request_data.get('address')
@@ -1078,8 +1170,6 @@ class Store:
                 "error": "tournament not found"
             }
         
-
-
         tournaments_list = []
 
 
