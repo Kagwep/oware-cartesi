@@ -1,37 +1,73 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useAccount } from 'wagmi'; // Assuming you're using wagmi for account management
-import { stringToHex,hexToString } from "viem";
-import { inspect } from '../utils';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { useAccount } from 'wagmi';
+import { stringToHex, hexToString } from "viem";
+import axios from 'axios';
 import { Challenge } from '../utils/types';
+import { inspect } from '../utils';
+
+const INSPECT_URL = 'https://oware-cartesi-v1.fly.dev/inspect';
 
 export const useChallenges = () => {
-  const [challenges, setChallenges] = useState([]);
+  const [challenges, setChallenges] = useState<Challenge[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { address } = useAccount();
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const fetchChallenges = useCallback(async () => {
-    if (address) {
-      try {
-        let results = await inspect(JSON.stringify({ method: "get_all_challenges" }));
-        console.log(results);
+    if (!address) return;
 
-        try {
-          results = JSON.parse(hexToString(results[0].payload))["challenges"];
-          console.log("results: ", results);
-          setChallenges(results);
-        } catch (e) {
-          console.error("Error parsing results: ", e);
+    // Cancel any ongoing request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    // Create a new AbortController for this request
+    abortControllerRef.current = new AbortController();
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await axios.post(
+        INSPECT_URL,
+        JSON.stringify({ method: "get_all_challenges" }),
+        {
+          headers: { 'Content-Type': 'application/json' },
+          signal: abortControllerRef.current.signal
         }
-      } catch (error) {
-        console.error("Error fetching challenges: ", error);
+      );
+
+      if (response.status === 200 && response.data && response.data.reports) {
+        const parsedResults = JSON.parse(hexToString(response.data.reports[0].payload));
+        setChallenges(parsedResults.challenges);
+      } else {
+        throw new Error('Unexpected response structure');
       }
+    } catch (error) {
+      if (axios.isCancel(error)) {
+        console.log('Request canceled:', error.message);
+      } else {
+        console.error('Error fetching challenges:', error);
+        setError(error instanceof Error ? error.message : 'An unknown error occurred');
+      }
+    } finally {
+      setIsLoading(false);
     }
   }, [address]);
 
   useEffect(() => {
     fetchChallenges();
+
+    return () => {
+      // Cancel any ongoing request when the component unmounts
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
   }, [fetchChallenges]);
 
-  return { challenges, fetchChallenges };
+  return { challenges, isLoading, error, refetchChallenges: fetchChallenges };
 };
 
 

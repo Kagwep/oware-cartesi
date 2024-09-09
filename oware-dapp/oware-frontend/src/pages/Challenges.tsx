@@ -24,17 +24,12 @@ import { useWriteInputBoxAddInput } from '../hooks/generated';
 export default function Challenges() {
   const [isOpen, setIsOpen] = useState(false);
   const [mychallenges, setMychallenges] = useState([])
-  const { challenges, fetchChallenges } = useChallenges();
+  const { challenges, isLoading, error, refetchChallenges }  = useChallenges();
   const toast = useToast();
 
   const { address, isConnected, chain } = useAccount();
 
   const { writeContractAsync } = useWriteInputBoxAddInput();
-
-  useEffect(() => {
-    // Simulating fetch request to the backend for challenges data
-    fetchChallenges();
-  }, [toast,address,fetchChallenges]);
 
 
   const handleClick = () => {
@@ -84,7 +79,7 @@ export default function Challenges() {
         await new Promise(resolve => setTimeout(resolve, 5000));
 
 
-        await fetchChallenges()
+        await refetchChallenges()
 
       } else {
         throw new Error("Failed to join challenge");
@@ -138,7 +133,7 @@ export default function Challenges() {
         await new Promise(resolve => setTimeout(resolve, 5000));
 
 
-        await fetchChallenges()
+        await refetchChallenges()
 
       } else {
         throw new Error("Failed to add opponent");
@@ -159,7 +154,8 @@ export default function Challenges() {
 
   };
 
-
+  if (isLoading) return <div>Loading challenges...</div>;
+  if (error) return <div>Error: {error}</div>;
   
   return (
     <Stack p="4" boxShadow="lg" m="4" borderRadius="sm" bg="gray.800" color="white">
@@ -170,9 +166,9 @@ export default function Challenges() {
         <Button variant="outline" colorScheme="green" onClick={handleClick}>
           Create new
         </Button>
-        <ChallengeFormModal isOpen={isOpen} onClose={() => setIsOpen(false)} fetchChallenges={fetchChallenges}/>
+        <ChallengeFormModal isOpen={isOpen} onClose={() => setIsOpen(false)} fetchChallenges={refetchChallenges}/>
       </Stack>
-      <ListChallenges challenges={challenges} onJoinChallenge={handleJoinChallenge} fetchChallenges={fetchChallenges} onAddOpponentChallenge={handleAddOpponentChallenge} />
+      <ListChallenges challenges={challenges} onJoinChallenge={handleJoinChallenge} fetchChallenges={refetchChallenges} onAddOpponentChallenge={handleAddOpponentChallenge} />
     </Stack>
   );
 }

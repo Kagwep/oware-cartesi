@@ -22,14 +22,10 @@ import ListTournaments from '../components/ListTournaments';
 export default function Tournaments() {
   const toast = useToast();
   const [isOpen, setIsOpen] = useState(false);
-  const { tournaments, fetchTournaments } = useTournaments();
+  const { tournaments, isLoading, error, refetchTournaments } = useTournaments();
   const { address, isConnected, chain } = useAccount();
 
   const { writeContractAsync } = useWriteInputBoxAddInput();
-  useEffect(() => {
-    // Simulating fetch request to the backend for challenges data
-    fetchTournaments();
-  }, [toast,address,fetchTournaments]);
 
 
   const handleClick = () => {
@@ -79,7 +75,7 @@ export default function Tournaments() {
         await new Promise(resolve => setTimeout(resolve, 5000));
 
 
-        await fetchTournaments()
+        await refetchTournaments()
 
       } else {
         throw new Error("Failed to join challenge");
@@ -133,7 +129,7 @@ export default function Tournaments() {
         await new Promise(resolve => setTimeout(resolve, 5000));
 
 
-        await fetchTournaments()
+        await refetchTournaments()
 
       } else {
         throw new Error("Failed to add opponent");
@@ -154,6 +150,9 @@ export default function Tournaments() {
 
   };
 
+  if (isLoading) return <div>Loading tournaments...</div>;
+  if (error) return <div>Error: {error}</div>;
+
   return (
     <Stack p="4" boxShadow="lg" m="4" borderRadius="sm" bg="gray.800" color="white">
       <Stack direction="row" alignItems="center">
@@ -163,9 +162,9 @@ export default function Tournaments() {
         <Button variant="outline" colorScheme="green" onClick={handleClick}>
           Create new
         </Button>
-        <TouramentFormModal isOpen={isOpen} onClose={() => setIsOpen(false)} fetchTournaments={fetchTournaments}/>
+        <TouramentFormModal isOpen={isOpen} onClose={() => setIsOpen(false)} fetchTournaments={refetchTournaments}/>
       </Stack>
-      <ListTournaments tournaments={tournaments} onJoinTournament={handleJoinTournament} fetchTournaments={fetchTournaments} onAddOpponentTournament={handleAddOpponentTournament} />
+      <ListTournaments tournaments={tournaments} onJoinTournament={handleJoinTournament} fetchTournaments={refetchTournaments} onAddOpponentTournament={handleAddOpponentTournament} />
     </Stack>
   );
 }

@@ -53,13 +53,11 @@ const RankDisplay = ({ rank_title }: { rank_title: Leader['rank_title'] | null }
 };
 
 const Profile = () => {
-  const { leader, fetchLeader } = useLeader();
+  const { leader, isLoading, error, refetchLeader } = useLeader();
+
   const toast = useToast();
   const { address, isConnected } = useAccount();
 
-  React.useEffect(() => {
-    fetchLeader();
-  }, [toast, address, fetchLeader]);
 
   const bgColor = useColorModeValue('white', 'gray.800');
   const textColor = useColorModeValue('gray.800', 'white');
@@ -72,7 +70,9 @@ const Profile = () => {
     );
   }
 
-  console.log(leader)
+  if (isLoading) return <div>Loading player profile...</div>;
+  if (error) return <div>Error: {error}</div>;
+  if (!leader) return <div>No player profile found</div>;
 
   return (
     <Stack p="4" boxShadow="lg" m="4" borderRadius="sm" bg="gray.800" color="white">

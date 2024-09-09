@@ -58,14 +58,12 @@ const RankDisplay = ({ rank_title }: { rank_title: Profile['rank_title'] }) => {
 };
 
 const LeaderBoard = () => {
-  const { leaders, fetchLeaders } = useLeaders();
   const toast = useToast();
   const { address } = useAccount();
+  const { leaders, isLoading, error, refetchLeaders } = useLeaders();
 
-  React.useEffect(() => {
-    fetchLeaders();
-  }, [toast, address, fetchLeaders]);
-
+  if (isLoading) return <div>Loading leaderboard...</div>;
+  if (error) return <div>Error: {error}</div>;
   return (
     <Box
       // bgImage="url('https://res.cloudinary.com/dydj8hnhz/image/upload/v1723626119/vaugem0rdpkd5i92u7qs.webp')"

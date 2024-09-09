@@ -1,2 +1,4 @@
 .cartesi
 .venv
+.env
+fly.toml
