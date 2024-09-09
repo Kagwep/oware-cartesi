@@ -1005,6 +1005,18 @@ const OwareGame = ({ initialChallengeInfo,selectedTournamentId }: {initialChalle
                   });
                   return;
               }
+
+              if (challengeInfo.game_ended) {
+                toast({
+                    id: uuidv4(),
+                    title: "Game ended",
+                    description: "Please join a new challenge or create new.",
+                    status: "warning",
+                    duration: 5000,
+                    isClosable: true,
+                });
+                return;
+            }
       
               isMoving = true; // Set moving state to true
       

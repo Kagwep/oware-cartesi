@@ -11,6 +11,20 @@ RUN apt-get update && apt-get install -y tzdata && \
 ln -fs /usr/share/zoneinfo/Etc/UTC /etc/localtime && \
 dpkg-reconfigure -f noninteractive tzdata
 
+# Set up time synchronization
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN echo '#!/bin/sh' > /usr/local/bin/sync-time.sh && \
+    echo 'date -s "$(curl -s --head http://google.com | grep ^Date: | sed 's/Date: //g')"' >> /usr/local/bin/sync-time.sh && \
+    chmod +x /usr/local/bin/sync-time.sh
+
+# If using Python, ensure it's using the system time
+ENV PYTHONUNBUFFERED=1
+ENV TZ=UTC
+
 LABEL io.cartesi.rollups.sdk_version=0.6.2
 LABEL io.cartesi.rollups.ram_size=128Mi
 

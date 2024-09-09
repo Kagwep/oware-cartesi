@@ -20,6 +20,7 @@ import { sendInput } from '../utils';
 import { useChallenges } from '../hooks/useChallenges';
 import { v4 as uuidv4 } from 'uuid';
 import { useWriteInputBoxAddInput } from '../hooks/generated';
+import OwareTutorial from './OwareTutorial';
 
 export default function Challenges() {
   const [isOpen, setIsOpen] = useState(false);
@@ -166,6 +167,7 @@ export default function Challenges() {
         <Button variant="outline" colorScheme="green" onClick={handleClick}>
           Create new
         </Button>
+        <OwareTutorial />
         <ChallengeFormModal isOpen={isOpen} onClose={() => setIsOpen(false)} fetchChallenges={refetchChallenges}/>
       </Stack>
       <ListChallenges challenges={challenges} onJoinChallenge={handleJoinChallenge} fetchChallenges={refetchChallenges} onAddOpponentChallenge={handleAddOpponentChallenge} />
