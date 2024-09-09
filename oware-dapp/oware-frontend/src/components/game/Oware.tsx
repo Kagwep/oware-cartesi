@@ -976,67 +976,70 @@ const OwareGame = ({ initialChallengeInfo,selectedTournamentId }: {initialChalle
         }
         
 
-    const setupHousePicking = () => {
-        if (!sceneRef.current) return;
-
-        const isScreenOwner = address && formattedAddressCheck(challengeInfo.player_turn.address, address);
-
-
-        gameMeshesRef.current.houses.forEach((house, index) => {
-            house.actionManager = new ActionManager(sceneRef.current);
-            house.actionManager.registerAction(
-                new ExecuteCodeAction(
-                    ActionManager.OnPickTrigger,
-                    () => {
-
-                        if (isScreenOwner && (index > 5 && index < 12)){
-                            highlightHouse(index);
-                            console.log(`House ${index + 1} picked`);
-                            // Here you can send the house number to your backend
-
-                            const playerHouses: string[] = challengeInfo.player_turn.houses
-
-                            // console.log(playerHouses)
-
-                            const exists = playerHouses.includes(`House${index+1}`);
-
-                            const actualHouse =  mapHouseIndex(index,exists,playerHouses) + 1;
-
-
-                            const houseSeeds = challengeInfo.state[actualHouse -1]
-
-                            if (houseSeeds <= 0){
-
-                                const toastId = uuidv4();
-                    
-                                toast({
-                                    id: toastId,
-                                    title: "House empty",
-                                    description: "Please select a house with seeds.",
-                                    status: "warning",
-                                    duration: 5000,
-                                    isClosable: true,
-                                });
-
-                                return
-
-                            }
-
-                            makeMove(`House${actualHouse}`)
-                            .then(() => {
-                                console.log("Move made successfully");
-                            })
-                            .catch((error) => {
-                                console.error("Error making move:", error);
-                            });
-
-
-                        }
-                    }
-                )
-            );
-        });
-    };
+        const setupHousePicking = () => {
+          if (!sceneRef.current) return;
+      
+          const isScreenOwner = address && formattedAddressCheck(challengeInfo.player_turn.address, address);
+          
+          let isMoving = false; // Local variable to track move state
+      
+          const handleHousePick = async (index: number) => {
+              if (isMoving) return; // Prevent multiple moves while one is in progress
+      
+              highlightHouse(index);
+              console.log(`House ${index + 1} picked`);
+      
+              const playerHouses = challengeInfo.player_turn.houses;
+              const exists = playerHouses.includes(`House${index+1}`);
+              const actualHouse = mapHouseIndex(index, exists, playerHouses) + 1;
+              const houseSeeds = challengeInfo.state[actualHouse - 1];
+      
+              if (houseSeeds <= 0) {
+                  toast({
+                      id: uuidv4(),
+                      title: "House empty",
+                      description: "Please select a house with seeds.",
+                      status: "warning",
+                      duration: 5000,
+                      isClosable: true,
+                  });
+                  return;
+              }
+      
+              isMoving = true; // Set moving state to true
+      
+              try {
+                  await makeMove(`House${actualHouse}`);
+                  console.log("Move made successfully");
+              } catch (error) {
+                  console.error("Error making move:", error);
+                  toast({
+                      id: uuidv4(),
+                      title: "Move Failed",
+                      description: "There was an error processing your move. Please try again.",
+                      status: "error",
+                      duration: 5000,
+                      isClosable: true,
+                  });
+              } finally {
+                  isMoving = false; // Reset moving state
+              }
+          };
+      
+          gameMeshesRef.current.houses.forEach((house, index) => {
+              house.actionManager = new ActionManager(sceneRef.current);
+              house.actionManager.registerAction(
+                  new ExecuteCodeAction(
+                      ActionManager.OnPickTrigger,
+                      () => {
+                          if (isScreenOwner && (index > 5 && index < 12)) {
+                              handleHousePick(index);
+                          }
+                      }
+                  )
+              );
+          });
+      };
 
     const highlightHouse = (houseIndex: number) => {
         if (!sceneRef.current) return;
