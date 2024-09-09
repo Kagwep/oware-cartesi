@@ -197,9 +197,9 @@ const ListTournaments: React.FC<ListTournamentsProps> = ({ tournaments, onJoinTo
           )}
             <Text mb={2}>Winner: <span className='text-cyan-500'>{tournament.winner?.address || 'N/A'}</span> - <span className='text-cyan-200'> {tournament.winner?.name}</span> </Text>
 
-            <Text fontSize="sm" color="gray.500" mt={2}>
+            {/* <Text fontSize="sm" color="gray.500" mt={2}>
               Created at: {new Date(tournament.started_at * 1000).toLocaleString()}
-            </Text>
+            </Text> */}
             <JoinTournamentFormModal 
               isOpen={isOpen && selectedTournamentId === tournament.tournament_id} 
               onClose={() => setIsOpen(false)} 

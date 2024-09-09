@@ -291,9 +291,9 @@ const ListTournamentChallenges: React.FC<ListTournamentChallengesProps> = ({ tou
                  <Text fontSize="sm" color="gray.500">Board State: {challenge.state || 'Not available'}</Text>
               )
             }
-            <Text fontSize="sm" color="gray.500" mt={2}>
+            {/* <Text fontSize="sm" color="gray.500" mt={2}>
               Created at: {new Date(challenge.created_at * 1000).toLocaleString()}
-            </Text>
+            </Text> */}
           </Box>
         ))
       ) : (
