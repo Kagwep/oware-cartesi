@@ -45,8 +45,8 @@ import { useWriteInputBoxAddInput } from "../../hooks/generated";
 import { fetchGraphQLData } from '../../utils/api';
 import { NOTICES_QUERY } from '../../utils/query';
 import { hexToString } from 'viem';
-import sphereTexture from "../../../assets/nuttexture3.avif";
-import { useChallenge } from '../../hooks/useChallenges';
+// import sphereTexture from "../../../assets/nuttexture3.avif";
+ import { useChallenge } from '../../hooks/useChallenges';
 import { useNavigate } from 'react-router-dom';
 import { shortenAddress } from '../../utils';
 import { GameInfoDisplay } from './GameInfoDisplay';
@@ -174,7 +174,7 @@ const OwareGame = ({ initialChallengeInfo,selectedTournamentId }: {initialChalle
 
     
 
-            SceneLoader.ImportMeshAsync("", "assets/", `board.glb`, scene).then((result) => {
+            SceneLoader.ImportMeshAsync("", "/models", `board.glb`, scene).then((result) => {
      
               if (sceneRef.current) {
                   //cleanupGameState();
@@ -895,7 +895,7 @@ const OwareGame = ({ initialChallengeInfo,selectedTournamentId }: {initialChalle
         //console.log(boundingBoxCenter);
 
         const sphereMaterial = new StandardMaterial(`seed-${sphere_count}`, sceneRef.current);
-        sphereMaterial.diffuseTexture = new Texture(sphereTexture, sceneRef.current);
+        sphereMaterial.diffuseTexture = new Texture('/nuttexture3.avif', sceneRef.current);
         newSphere.material = sphereMaterial;
 
         // Check for collisions with previously added spheres
