@@ -174,7 +174,7 @@ const OwareGame = ({ initialChallengeInfo,selectedTournamentId }: {initialChalle
 
     
 
-            SceneLoader.ImportMeshAsync("", "/models", `board.glb`, scene).then((result) => {
+            SceneLoader.ImportMeshAsync("", "/models/", `board.glb`, scene).then((result) => {
      
               if (sceneRef.current) {
                   //cleanupGameState();
