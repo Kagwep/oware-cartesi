@@ -183,7 +183,7 @@ const ListTournaments: React.FC<ListTournamentsProps> = ({ tournaments, onJoinTo
 
               )}
 
-          {tournament.in_progress  && (
+          {tournament.in_progress || tournament.winner ?   (
             <Button
              bg="orange.900"
              size="sm"
@@ -194,6 +194,8 @@ const ListTournaments: React.FC<ListTournamentsProps> = ({ tournaments, onJoinTo
             >
               Go to Challenges
             </Button>
+          ): (
+            <></>
           )}
             <Text mb={2}>Winner: <span className='text-cyan-500'>{tournament.winner?.address || 'N/A'}</span> - <span className='text-cyan-200'> {tournament.winner?.name}</span> </Text>
 
