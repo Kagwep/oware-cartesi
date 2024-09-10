@@ -80,7 +80,7 @@ const ListTournamentChallenges: React.FC<ListTournamentChallengesProps> = ({ tou
     console.log(`Starting game with Challenge ID: ${challengeId} in tournamnet ${tournamentId}`);
 
     const dataToSend = {
-      method: "tournament_chalenge_spawn",
+      method: "tournament_challenge_spawn",
       tournament_id: parseInt(tournamentId, 10),
       challenge_id: parseInt(challengeId, 10),
       challenge_type: challengeType
