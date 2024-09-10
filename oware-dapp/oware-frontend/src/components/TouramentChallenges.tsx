@@ -13,7 +13,6 @@ import { NOTICES_QUERY } from '../utils/query';
 import { useTournaments } from '../hooks/useTournaments';
 import AddOpponentTournamentFormModal from './forms/AddOpponentTournamentFormModal';
 import TournamentBanner from './TournamentBanner';
-import AIMatchProgressModal from './AIMatchProgressModal';
 
 interface ListTournamentChallengesProps {
   tournament: Tournament;
@@ -29,10 +28,7 @@ const ListTournamentChallenges: React.FC<ListTournamentChallengesProps> = ({ tou
   const [isOpenOne, setIsOpenOne] = useState(false);
   const [selectedTournamentId, setSelectedTournamentId] = useState<string | null>(null);
   const [selectedChallenge, setSelectedChallenge] = useState<Challenge | null>(null);
-  const [agentOne, setAgentOne] = useState('');
-  const [agentTwo, setAgentTwo] = useState('');
-  const [progress, setProgress] = useState(0);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  
 
   const {writeContractAsync} = useWriteInputBoxAddInput()
 
@@ -122,15 +118,10 @@ const ListTournamentChallenges: React.FC<ListTournamentChallengesProps> = ({ tou
 
       console.log("----->",response_data)
 
-      setAgentOne(tournament.challenges[parseInt(challengeId)].player_one_captured.name)
-      setAgentTwo(tournament.challenges[parseInt(challengeId)].player_two_captured.name)
+                // Wait for 20 seconds
+       await new Promise(resolve => setTimeout(resolve, 5000));
 
-      for (let i = 0; i < 10; i++) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        setProgress((i + 1) * 10);
-      }
-
-      await fetchTournaments();
+       await fetchTournaments()
 
         // Additional success handling (e.g., reset form, close modal, etc.)
       } else {
@@ -146,8 +137,6 @@ const ListTournamentChallenges: React.FC<ListTournamentChallengesProps> = ({ tou
         isClosable: true,
       });
       // Additional error handling if needed
-    }finally {
-      setIsModalOpen(false);
     }
   };
 
@@ -314,13 +303,6 @@ const ListTournamentChallenges: React.FC<ListTournamentChallengesProps> = ({ tou
         </Box>
       )}
     </VStack>
-    <AIMatchProgressModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        progress={progress}
-        agentOne={agentOne}
-        agentTwo={agentTwo}
-      />
     </>
 
   );
