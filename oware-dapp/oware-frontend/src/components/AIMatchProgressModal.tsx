@@ -5,11 +5,10 @@ interface GameStartModalProps {
   isOpen: boolean,
   onClose: () => void;
   onCountdownComplete: () => void;
-  agentOne:string;
-  agentTwo: string;
+
 }
 
-const GameStartModal = ({ isOpen, onClose, onCountdownComplete, agentOne,agentTwo }: GameStartModalProps) => {
+const GameStartModal = ({ isOpen, onClose, onCountdownComplete}: GameStartModalProps) => {
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
@@ -37,7 +36,6 @@ const GameStartModal = ({ isOpen, onClose, onCountdownComplete, agentOne,agentTw
       <ModalContent bg={'slate.900'} color={'slate.100'}>
         <ModalHeader>Playing</ModalHeader>
         <ModalBody>
-          <Text padding={'3px'}> {agentOne}  vs {agentTwo}</Text>
           <p>The tournament will end about  1 minute...</p>
           <Progress value={progress} size="lg" />
         </ModalBody>

@@ -31,8 +31,6 @@ const ListTournamentChallenges: React.FC<ListTournamentChallengesProps> = ({ tou
   const [selectedTournamentId, setSelectedTournamentId] = useState<string | null>(null);
   const [selectedChallenge, setSelectedChallenge] = useState<Challenge | null>(null);
   
-  const [agentOne, setAgentOne] = useState('');
-  const [agentTwo, setAgentTwo] = useState('');
 
   const {writeContractAsync} = useWriteInputBoxAddInput()
 
@@ -121,8 +119,6 @@ const ListTournamentChallenges: React.FC<ListTournamentChallengesProps> = ({ tou
       const response_data = await fetchGraphQLData(NOTICES_QUERY);
 
       console.log("----->",response_data)
-      setAgentOne(tournament.challenges[parseInt(challengeId)].player_one_captured.name)
-      setAgentTwo(tournament.challenges[parseInt(challengeId)].player_two_captured.name)
       setIsOpenTwo(true)
         // Wait for 20 seconds
         // Additional success handling (e.g., reset form, close modal, etc.)
@@ -309,7 +305,7 @@ const ListTournamentChallenges: React.FC<ListTournamentChallengesProps> = ({ tou
         </Box>
       )}
     </VStack>
-    <GameStartModal isOpen={isOpenTwo} onClose={() => setIsOpenTwo(false)} onCountdownComplete={() => { return onCountdownComplete(); } } agentOne={agentOne} agentTwo={agentTwo} />
+    <GameStartModal isOpen={isOpenTwo} onClose={() => setIsOpenTwo(false)} onCountdownComplete={() => { return onCountdownComplete(); } } />
     </>
 
   );
