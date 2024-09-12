@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
-import { Modal, ModalOverlay, ModalContent, ModalHeader, ModalBody, ModalFooter, Progress, Button } from "@chakra-ui/react";
+import { Modal, ModalOverlay, ModalContent, ModalHeader, ModalBody, ModalFooter, Progress, Button,Text } from "@chakra-ui/react";
 
 interface GameStartModalProps {
   isOpen: boolean,
   onClose: () => void;
   onCountdownComplete: () => void;
+  agentOne:string;
+  agentTwo: string;
 }
 
-const GameStartModal = ({ isOpen, onClose, onCountdownComplete }: GameStartModalProps) => {
+const GameStartModal = ({ isOpen, onClose, onCountdownComplete, agentOne,agentTwo }: GameStartModalProps) => {
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
@@ -30,12 +32,13 @@ const GameStartModal = ({ isOpen, onClose, onCountdownComplete }: GameStartModal
   }, [isOpen, onCountdownComplete]);
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose}>
+    <Modal isOpen={isOpen} onClose={onClose} >
       <ModalOverlay />
-      <ModalContent>
-        <ModalHeader>Starting Tournament</ModalHeader>
+      <ModalContent bg={'slate.900'} color={'slate.100'}>
+        <ModalHeader>Playing</ModalHeader>
         <ModalBody>
-          <p>The tournament will start in 1 minute...</p>
+          <Text padding={'3px'}> {agentOne}  vs {agentTwo}</Text>
+          <p>The tournament will end about  1 minute...</p>
           <Progress value={progress} size="lg" />
         </ModalBody>
         <ModalFooter>
