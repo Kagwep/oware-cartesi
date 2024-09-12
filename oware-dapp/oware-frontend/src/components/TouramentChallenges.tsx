@@ -13,6 +13,7 @@ import { NOTICES_QUERY } from '../utils/query';
 import { useTournaments } from '../hooks/useTournaments';
 import AddOpponentTournamentFormModal from './forms/AddOpponentTournamentFormModal';
 import TournamentBanner from './TournamentBanner';
+import GameStartModal from './AIMatchProgressModal';
 
 interface ListTournamentChallengesProps {
   tournament: Tournament;
@@ -26,6 +27,7 @@ const ListTournamentChallenges: React.FC<ListTournamentChallengesProps> = ({ tou
   const toast = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [isOpenOne, setIsOpenOne] = useState(false);
+  const [isOpenTwo, setIsOpenTwo] = useState(false);
   const [selectedTournamentId, setSelectedTournamentId] = useState<string | null>(null);
   const [selectedChallenge, setSelectedChallenge] = useState<Challenge | null>(null);
   
@@ -117,11 +119,10 @@ const ListTournamentChallenges: React.FC<ListTournamentChallengesProps> = ({ tou
       const response_data = await fetchGraphQLData(NOTICES_QUERY);
 
       console.log("----->",response_data)
+      setIsOpenTwo(true)
 
                 // Wait for 20 seconds
-       await new Promise(resolve => setTimeout(resolve, 5000));
 
-       await fetchTournaments()
 
         // Additional success handling (e.g., reset form, close modal, etc.)
       } else {
@@ -186,6 +187,10 @@ const ListTournamentChallenges: React.FC<ListTournamentChallengesProps> = ({ tou
   if (selectedChallenge && selectedTournamentId) {
     
     return <Arena chalengeInfo={selectedChallenge} selectedTournamentId={selectedTournamentId} />;
+  }
+  const onCountdownComplete = async () =>{
+    await fetchTournaments();
+    setIsOpenTwo(false)
   }
 
   return (
@@ -303,6 +308,7 @@ const ListTournamentChallenges: React.FC<ListTournamentChallengesProps> = ({ tou
         </Box>
       )}
     </VStack>
+    <GameStartModal isOpen={isOpenTwo} onClose={() => setIsOpenTwo(false)} onCountdownComplete={() => {return onCountdownComplete()}} />
     </>
 
   );

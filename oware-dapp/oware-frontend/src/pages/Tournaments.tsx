@@ -18,6 +18,7 @@ import { useWriteInputBoxAddInput } from '../hooks/generated';
 import { v4 as uuidv4 } from 'uuid';
 import { sendInput } from '../utils';
 import ListTournaments from '../components/ListTournaments';
+import TournamentTutorial from './TournamentTutorial';
 
 export default function Tournaments() {
   const toast = useToast();
@@ -162,6 +163,7 @@ export default function Tournaments() {
         <Button variant="outline" colorScheme="green" onClick={handleClick}>
           Create new
         </Button>
+        <TournamentTutorial />
         <TouramentFormModal isOpen={isOpen} onClose={() => setIsOpen(false)} fetchTournaments={refetchTournaments}/>
       </Stack>
       <ListTournaments tournaments={tournaments} onJoinTournament={handleJoinTournament} fetchTournaments={refetchTournaments} onAddOpponentTournament={handleAddOpponentTournament} />

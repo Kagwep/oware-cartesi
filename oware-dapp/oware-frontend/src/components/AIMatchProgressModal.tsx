@@ -1,51 +1,49 @@
-import React from 'react';
-import {
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  Button,
-  Progress,
-  Text,
-  VStack,
-  HStack
-} from '@chakra-ui/react';
-import { Activity } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Modal, ModalOverlay, ModalContent, ModalHeader, ModalBody, ModalFooter, Progress, Button } from "@chakra-ui/react";
 
-interface AIMatchProgressModalProps {
-    isOpen: boolean,
-    onClose: () => void;
-    progress: number,
-    agentOne: string,
-    agentTwo:string,
+interface GameStartModalProps {
+  isOpen: boolean,
+  onClose: () => void;
+  onCountdownComplete: () => void;
 }
 
-const AIMatchProgressModal = ({ isOpen, onClose, progress, agentOne, agentTwo}: AIMatchProgressModalProps) => {
+const GameStartModal = ({ isOpen, onClose, onCountdownComplete }: GameStartModalProps) => {
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    if (isOpen) {
+      setProgress(0); // Reset progress
+      let interval = setInterval(() => {
+        setProgress((prev) => (prev < 100 ? prev + 1.66 : 100)); // Increment progress
+      }, 1000);
+
+      const timeout = setTimeout(() => {
+        clearInterval(interval);
+        onCountdownComplete(); // Call when the countdown finishes
+      }, 60000); // 1 minute
+
+      return () => {
+        clearInterval(interval);
+        clearTimeout(timeout);
+      };
+    }
+  }, [isOpen, onCountdownComplete]);
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose} isCentered size="md">
+    <Modal isOpen={isOpen} onClose={onClose}>
       <ModalOverlay />
       <ModalContent>
-        <ModalHeader>AI Match in Progress</ModalHeader>
+        <ModalHeader>Starting Tournament</ModalHeader>
         <ModalBody>
-          <VStack spacing={4} align="stretch">
-            <HStack>
-              <Activity size={24} />
-              <Text fontWeight="bold">{agentOne} vs {agentTwo}</Text>
-            </HStack>
-            <Progress value={progress} size="lg" colorScheme="blue" />
-            <Text textAlign="center">{progress}% complete</Text>
-          </VStack>
+          <p>The tournament will start in 1 minute...</p>
+          <Progress value={progress} size="lg" />
         </ModalBody>
         <ModalFooter>
-          <Button colorScheme="blue" mr={3} onClick={onClose} isDisabled={progress < 100}>
-            Close
-          </Button>
+          <Button onClick={onClose} colorScheme="red">Cancel</Button>
         </ModalFooter>
       </ModalContent>
     </Modal>
   );
 };
 
-export default AIMatchProgressModal;
+export default GameStartModal;

@@ -15,6 +15,7 @@ import { CalendarIcon, TimeIcon, RepeatIcon, StarIcon } from '@chakra-ui/icons';
 import { Tournament } from '../utils/types';
 import { shortenAddress } from '../utils';
 
+
 interface TournamentBannerProps {
   tournament: Tournament;
 }
