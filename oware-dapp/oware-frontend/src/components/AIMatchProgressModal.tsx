@@ -33,7 +33,7 @@ const GameStartModal = ({ isOpen, onClose, onCountdownComplete}: GameStartModalP
   return (
     <Modal isOpen={isOpen} onClose={onClose} >
       <ModalOverlay />
-      <ModalContent bg={'slate.900'} color={'slate.100'}>
+      <ModalContent bg="gray.800" color="white">
         <ModalHeader>Playing</ModalHeader>
         <ModalBody>
           <p>The tournament will end about  1 minute...</p>
