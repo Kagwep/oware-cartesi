@@ -66,7 +66,7 @@ Our version of Oware enhances the traditional gameplay with several unique featu
 
 # Project Setup and Running Guide
 
-This guide provides instructions for setting up and running the backend, relayer, frontend, and Nebula contract of the project locally.
+This guide provides instructions for setting up and running the backend, relayer, frontend, and Oware Rewards contract of the project locally.
 
 ## Table of Contents
 
@@ -95,7 +95,7 @@ This guide provides instructions for setting up and running the backend, relayer
 
 1. **Navigate to the Frontend Folder**
 
-   `cd` into the `frontend` folder.
+   `cd` into the `oware-frontend` folder.
 
 2. **Install Dependencies**
 
