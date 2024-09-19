@@ -7,8 +7,7 @@ export default defineConfig({
   optimizeDeps: {
     exclude: ['@babylonjs/havok'],
 },
-server: {
-  host:'0.0.0.0',
-  port:5173,
+define: {
+  'process.env': {}
 }
 })

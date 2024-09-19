@@ -1,6 +1,7 @@
-import.meta.env.VITE_MODE = import.meta.env.VITE_MODE || 'production';
+// config.js or constants.js
+const VITE_MODE = import.meta.env.VITE_MODE || 'production';
 
-const isLocal = import.meta.env.VITE_MODE === 'local';
+const isLocal = VITE_MODE === 'local';
 
 export const dAppAddress = isLocal
   ? '0xab7528bb862fb57e8a2bcd567a2e929a0be56a5e'
