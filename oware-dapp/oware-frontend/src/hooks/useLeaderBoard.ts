@@ -3,8 +3,7 @@ import { useAccount } from 'wagmi';
 import { hexToString } from "viem";
 import axios from 'axios';
 import { Profile } from '../utils/types';
-
-const INSPECT_URL = 'https://oware-cartesi-v1.fly.dev/inspect';
+import {INSPECT_URL} from '../constants'
 
 export const useLeaders = () => {
   const [leaders, setLeaders] = useState<Profile[]>([]);

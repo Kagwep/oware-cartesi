@@ -18,13 +18,13 @@ const config: HardhatUserConfig = {
     'base-sepolia': {
       url: 'https://sepolia.base.org',
       accounts: [process.env.WALLET_KEY as string],
-      gasPrice: 1000000000,
+  
     },
     // for local dev environment
     'base-local': {
-      url: 'http://localhost:8545',
+      url: 'http://localhost:8546',
       accounts: [process.env.WALLET_KEY as string],
-      gasPrice: 1000000000,
+     
     },
   },
   defaultNetwork: 'hardhat',

@@ -13,6 +13,7 @@ import { NOTICES_QUERY } from '../utils/query';
 import { useChallenges } from '../hooks/useChallenges';
 import AddOpponentChallengeFormModal from './forms/AddOpponentChallengeFormModal';
 import { shortenAddress } from '../utils';
+import { formattedAddressCheck } from '../utils';
 
 interface ListChallengesProps {
   challenges: Challenge[];
@@ -223,7 +224,7 @@ const ListChallenges: React.FC<ListChallengesProps> = ({ challenges, onJoinChall
                 <Text fontWeight="bold">Opponent: <span className='text-teal-200'>{challenge.opponent[0]}</span></Text>
               ) : (
 
-                challenge.challenge_type === 2  || challenge.challenge_type == 3 || challenge.creator[0].toLocaleLowerCase() == address?.toLowerCase() ? (
+                challenge.challenge_type === 2  || challenge.challenge_type === 3  ? (
                   <Button
                   bg="orange.900"
                   size="sm"
@@ -236,14 +237,21 @@ const ListChallenges: React.FC<ListChallengesProps> = ({ challenges, onJoinChall
                   Add opponent
                 </Button>
                 ):(
-                  <Button
-                  bg="purple.600"
-                  size="sm"
-                  color={'white'}
-                  onClick={() => handleJoinClick(challenge.challenge_id)}
-                >
-                  Join Challenge
-                </Button>
+                  challenge.creator[1].toLowerCase() === address?.toLowerCase() ? (<>
+                  
+                  </>):(<>
+                    
+                    <Button
+                    bg="purple.600"
+                    size="sm"
+                    color={'white'}
+                    onClick={() => handleJoinClick(challenge.challenge_id)}
+                  >
+                    
+                    Join Challenge
+                  </Button>
+                    
+                    </>)
                 )
                   
                 

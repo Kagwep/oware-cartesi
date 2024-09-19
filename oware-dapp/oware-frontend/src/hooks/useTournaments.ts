@@ -4,8 +4,7 @@ import { stringToHex,hexToString } from "viem";
 import { inspect } from '../utils';
 import { Tournament } from '../utils/types';
 import axios from 'axios';
-
-const INSPECT_URL = 'https://oware-cartesi-v1.fly.dev/inspect';
+import {INSPECT_URL} from '../constants'
 
 export const useTournaments = () => {
   const [tournaments, setTournaments] = useState<Tournament[]>([]);

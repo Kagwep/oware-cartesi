@@ -4,8 +4,7 @@ import { stringToHex, hexToString } from "viem";
 import axios from 'axios';
 import { Challenge } from '../utils/types';
 import { inspect } from '../utils';
-
-const INSPECT_URL = 'https://oware-cartesi-v1.fly.dev/inspect';
+import {INSPECT_URL} from '../constants'
 
 export const useChallenges = () => {
   const [challenges, setChallenges] = useState<Challenge[]>([]);
