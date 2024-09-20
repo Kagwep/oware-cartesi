@@ -1175,7 +1175,7 @@ class Store:
 
         tournament = self.tournaments.get(tournament_id)
 
-        if tournament.winner is not None:
+        if len(tournament.winners) == 1 and not tournament.in_progress:
             self.delete_player_from_active_tournament(tournament)
 
         tournaments_list.append({

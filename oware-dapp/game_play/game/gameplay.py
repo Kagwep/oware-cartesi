@@ -196,7 +196,7 @@ class GamePlay():
         
         seeds_increamented_to_count = seeds[previous_house_index]
         
-        if seeds_increamented_to_count == 2 or seeds_increamented_to_count == 3:
+        if (seeds_increamented_to_count == 2) or (seeds_increamented_to_count == 3):
              return self.capture_seeds(seeds,seeds_increamented_to_count,previous_house_index,captured)
         else:
             return seeds,captured

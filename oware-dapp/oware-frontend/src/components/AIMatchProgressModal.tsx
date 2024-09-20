@@ -21,7 +21,7 @@ const GameStartModal = ({ isOpen, onClose, onCountdownComplete}: GameStartModalP
       const timeout = setTimeout(() => {
         clearInterval(interval);
         onCountdownComplete(); // Call when the countdown finishes
-      }, 60000); // 1 minute
+      }, 30000); // 1 minute
 
       return () => {
         clearInterval(interval);
@@ -36,7 +36,7 @@ const GameStartModal = ({ isOpen, onClose, onCountdownComplete}: GameStartModalP
       <ModalContent bg="gray.800" color="white">
         <ModalHeader>Playing</ModalHeader>
         <ModalBody>
-          <p>The tournament will end about  1 minute...</p>
+          <p>please wait...</p>
           <Progress value={progress} size="lg" />
         </ModalBody>
         <ModalFooter>

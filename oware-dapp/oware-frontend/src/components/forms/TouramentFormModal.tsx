@@ -60,6 +60,7 @@ const TouramentFormModal = ({ isOpen, onClose, fetchTournaments}: ChallengeFormM
   
       try {
         const result = await sendInput(JSON.stringify(dataToSend), writeContractAsync);
+        
         if (result.success) {
 
           toast.update(toastId, {
@@ -77,7 +78,7 @@ const TouramentFormModal = ({ isOpen, onClose, fetchTournaments}: ChallengeFormM
           await fetchTournaments()
    
         } else {
-          throw new Error("Failed to create tournament");
+          throw new Error(`Failed to create tournament `);
         }
       } catch (error) {
         console.error("Error creating tournament:", error);
