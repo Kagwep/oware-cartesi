@@ -1,5 +1,9 @@
 # oware-cartesi
 
+## Live Demo
+
+Check out the live version of the Oware DApp here: [Oware DApp Live Demo](https://oware-cartesi.vercel.app)
+
 
 ## Game Overview
 
@@ -116,7 +120,7 @@ After successfully running the frontend, you'll want to interact with the Dapp. 
 
 
 
-## Optional: Deploying the Oware NFT Contract
+## Optional: Deploying the Oware NFT Rewards Contract
 
 
 1. **Navigate to the oware-nft Folder**
