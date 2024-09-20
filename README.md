@@ -21,6 +21,7 @@ This guide provides instructions for setting up and running the backend, fronten
 ## Table of Contents
 
 1. [Getting Started](#getting-started)
+   - [Prerequisites](#prerequisites)
 2. [Project Setup and Running Guide](#project-setup-and-running-guide)
    - [Running the Backend](#running-the-backend)
    - [Running the Frontend](#running-the-frontend)
@@ -33,7 +34,42 @@ This guide provides instructions for setting up and running the backend, fronten
 
 ## Getting Started
 
-First, clone the project repository and navigate to the correct directory:
+### Prerequisites
+
+Before you begin, ensure you have the following installed and set up:
+
+1. **Docker Desktop and RISC-V support**:
+   - Install [Docker Desktop](https://www.docker.com/products/docker-desktop) for your operating system.
+   - To install Docker RISC-V support without using Docker Desktop, run the following command:
+     ```bash
+     docker run --privileged --rm tonistiigi/binfmt --install all
+     ```
+   - Verify Docker is running by using the following command in your terminal:
+     ```bash
+     docker --version
+     ```
+
+2. **Node.js and npm**:
+   - Download and install the latest version of [Node.js](https://nodejs.org/), which includes npm.
+   - Verify the installation by running:
+     ```bash
+     node --version
+     npm --version
+     ```
+
+3. **Cartesi CLI**:
+   - Cartesi CLI is an easy-to-use tool to build and deploy your dApps. To install it, run:
+     ```bash
+     npm i -g @cartesi/cli
+     ```
+   - After installation, verify it's correctly installed by running:
+     ```bash
+     cartesi --version
+     ```
+
+4. **Git**: For cloning the repository.
+
+Now, let's clone the project repository and navigate to the correct directory:
 
 ```bash
 git clone https://github.com/Kagwep/oware-cartesi.git
@@ -56,6 +92,7 @@ Project structure:
    ```
 
 2. **Build and Run the Application**
+   Ensure Docker is running, then execute:
    ```bash
    cartesi build
    cartesi run
@@ -86,7 +123,7 @@ Project structure:
 
 ## Interacting with the DApp
 
-After successfully running the frontend, you'll want to interact with the Dapp. Follow these steps:
+After successfully running the frontend, you'll want to interact with the DApp. Follow these steps:
 
 ### 1. Connect Your Wallet
 
@@ -110,18 +147,17 @@ After successfully running the frontend, you'll want to interact with the Dapp. 
 1. Once connected and on the correct network, you should see your account balance and be able to interact with the DApp.
 2. Explore all the Oware game features thoroughly:
    - Start a new challenge
-   - Start a new Tournament
+   - Start a new tournament
    - Make moves in the game
    - View your game profile
    - Check out any leaderboards or stats
-   
+   - Explore any settings or customization options
 3. Play multiple games to get a full experience of the DApp's functionality.
 4. Test all available features and interactions to ensure everything is working as expected.
 
 
 
-## Optional: Deploying the Oware NFT Rewards Contract
-
+## Optional: Deploying the Oware NFT Contract
 
 1. **Navigate to the oware-nft Folder**
    ```bash
@@ -152,6 +188,7 @@ After successfully running the frontend, you'll want to interact with the Dapp. 
 5. **Interact with the NFT Contract (if applicable)**
    - After deployment, return to the DApp frontend.
    - Look for any new sections or features related to NFT rewards or minting.
+
 
 ## Game Setup
 

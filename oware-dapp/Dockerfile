@@ -25,7 +25,7 @@ RUN echo '#!/bin/sh' > /usr/local/bin/sync-time.sh && \
 ENV PYTHONUNBUFFERED=1
 ENV TZ=UTC
 
-LABEL io.cartesi.rollups.sdk_version=0.6.2
+LABEL io.cartesi.rollups.sdk_version=0.9.0
 LABEL io.cartesi.rollups.ram_size=128Mi
 
 ARG DEBIAN_FRONTEND=noninteractive
