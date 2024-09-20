@@ -16,34 +16,53 @@ This guide provides instructions for setting up and running the backend, fronten
 
 ## Table of Contents
 
-1. [Project Setup and Running Guide](#project-setup-and-running-guide)
+1. [Getting Started](#getting-started)
+2. [Project Setup and Running Guide](#project-setup-and-running-guide)
    - [Running the Backend](#running-the-backend)
    - [Running the Frontend](#running-the-frontend)
-2. [Interacting with the DApp](#interacting-with-the-dapp)
+3. [Interacting with the DApp](#interacting-with-the-dapp)
    - [Connect Your Wallet](#1-connect-your-wallet)
    - [Ensure You're on the Local Network](#2-ensure-youre-on-the-local-network)
    - [Explore and Interact](#3-explore-and-interact)
-3. [Optional: Deploying the Oware NFT Contract](#optional-deploying-the-oware-nft-contract)
-4. [Troubleshooting](#troubleshooting)
+4. [Optional: Deploying the Oware NFT Contract](#optional-deploying-the-oware-nft-contract)
+5. [Troubleshooting](#troubleshooting)
+
+## Getting Started
+
+First, clone the project repository and navigate to the correct directory:
+
+```bash
+git clone https://github.com/Kagwep/oware-cartesi.git
+cd oware-cartesi
+```
+
+Project structure:
+- `oware-cartesi/` (root directory)
+  - `oware-dapp/` (contains the backend and frontend)
+    - `oware-frontend/` (frontend code)
+  - `oware-nft/` (NFT contract code)
 
 ## Project Setup and Running Guide
 
 ### Running the Backend
 
 1. **Navigate to the oware-dapp Folder**
-   - Open your terminal and `cd` into the `oware-dapp` folder.
+   ```bash
+   cd oware-dapp
+   ```
 
 2. **Build and Run the Application**
-   - Run the following commands:
-     ```bash
-     cartesi build
-     cartesi run
-     ```
+   ```bash
+   cartesi build
+   cartesi run
+   ```
 
 ### Running the Frontend
 
 1. **Open a new terminal and navigate to the Oware Frontend Folder**
-   - `cd` into the `oware-frontend` folder.
+   ```bash
+   cd oware-cartesi/oware-dapp/oware-frontend
+   ```
 
 2. **Install Dependencies**
    ```bash
@@ -63,12 +82,12 @@ This guide provides instructions for setting up and running the backend, fronten
 
 ## Interacting with the DApp
 
-After successfully running the frontend, you'll want to interact with the DApp. Follow these steps:
+After successfully running the frontend, you'll want to interact with the Dapp. Follow these steps:
 
 ### 1. Connect Your Wallet
 
 1. Open your web browser and navigate to the frontend URL (typically `http://localhost:5173`).
-2. Look for a "Connect Wallet" button,  top right corner of the page.
+2. Look for a "Connect Wallet" button, usually in the top right corner of the page.
 3. Click on the button and select your preferred wallet (e.g., MetaMask).
 4. Follow the prompts in your wallet to connect it to the DApp.
 
@@ -84,23 +103,26 @@ After successfully running the frontend, you'll want to interact with the DApp. 
 
 ### 3. Explore and Interact
 
-1. Once connected and on the correct network, you should see your wallet address and be able to interact with the DApp.
+1. Once connected and on the correct network, you should see your account balance and be able to interact with the DApp.
 2. Explore all the Oware game features thoroughly:
    - Start a new challenge
-   - Start a new  tournament
+   - Start a new Tournament
    - Make moves in the game
    - View your game profile
-   - Check out any leaderboards 
-
+   - Check out any leaderboards or stats
+   
 3. Play multiple games to get a full experience of the DApp's functionality.
 4. Test all available features and interactions to ensure everything is working as expected.
+
 
 
 ## Optional: Deploying the Oware NFT Contract
 
 
-1. **Open a new terminal and open the oware NFT rewards Folder**
-   - `cd` into the `oware-nft` folder.
+1. **Navigate to the oware-nft Folder**
+   ```bash
+   cd oware-cartesi/oware-nft
+   ```
 
 2. **Install Dependencies**
    ```bash
@@ -177,10 +199,6 @@ Our version of Oware enhances the traditional gameplay with several unique featu
 2. Try to keep your pits with low seed counts to limit your opponent's capturing opportunities.
 3. Use the special rules to your advantage, sometimes forcing your opponent into suboptimal moves.
 4. In the endgame, count carefully to ensure you're on track to capture the majority of seeds.
-
-
-
-## Project Documentation
 
 
 <br>
