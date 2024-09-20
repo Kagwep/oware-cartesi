@@ -144,14 +144,14 @@ After successfully running the frontend, you'll want to interact with the DApp. 
 
 ### 3. Explore and Interact
 
-1. Once connected and on the correct network, you should see your account balance and be able to interact with the DApp.
+1. Once connected and on the correct network, you should see your wallet address and be able to interact with the DApp.
 2. Explore all the Oware game features thoroughly:
    - Start a new challenge
    - Start a new tournament
    - Make moves in the game
    - View your game profile
    - Check out any leaderboards or stats
-   - Explore any settings or customization options
+
 3. Play multiple games to get a full experience of the DApp's functionality.
 4. Test all available features and interactions to ensure everything is working as expected.
 
