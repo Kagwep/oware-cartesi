@@ -5,7 +5,127 @@
 
 Oware is a two-player game belonging to the Mancala family of board games. The game is played on a board with 12 pits (or houses) arranged in two rows of six, with each player controlling the six pits on their side of the board.
 
+
 <img src="https://res.cloudinary.com/dydj8hnhz/image/upload/v1726751708/st2hf6gvjfaqgqqvufbo.png" alt="Detailed view of Oware board setup" />
+
+### Developer and User Guides
+
+# Project Setup and Running Guide
+
+This guide provides instructions for setting up and running the backend, frontend, and Oware Rewards contract of the project locally.
+
+## Table of Contents
+
+1. [Project Setup and Running Guide](#project-setup-and-running-guide)
+   - [Running the Backend](#running-the-backend)
+   - [Running the Frontend](#running-the-frontend)
+2. [Interacting with the DApp](#interacting-with-the-dapp)
+   - [Connect Your Wallet](#1-connect-your-wallet)
+   - [Ensure You're on the Local Network](#2-ensure-youre-on-the-local-network)
+   - [Explore and Interact](#3-explore-and-interact)
+3. [Optional: Deploying the Oware NFT Contract](#optional-deploying-the-oware-nft-contract)
+4. [Troubleshooting](#troubleshooting)
+
+## Project Setup and Running Guide
+
+### Running the Backend
+
+1. **Navigate to the oware-dapp Folder**
+   - Open your terminal and `cd` into the `oware-dapp` folder.
+
+2. **Build and Run the Application**
+   - Run the following commands:
+     ```bash
+     cartesi build
+     cartesi run
+     ```
+
+### Running the Frontend
+
+1. **Open a new terminal and navigate to the Oware Frontend Folder**
+   - `cd` into the `oware-frontend` folder.
+
+2. **Install Dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Set Up Environment Variables**
+   - Create a `.env` file with the following content:
+     ```
+     VITE_MODE=local
+     ```
+
+4. **Start the Frontend**
+   ```bash
+   npm run dev
+   ```
+
+## Interacting with the DApp
+
+After successfully running the frontend, you'll want to interact with the DApp. Follow these steps:
+
+### 1. Connect Your Wallet
+
+1. Open your web browser and navigate to the frontend URL (typically `http://localhost:5173`).
+2. Look for a "Connect Wallet" button,  top right corner of the page.
+3. Click on the button and select your preferred wallet (e.g., MetaMask).
+4. Follow the prompts in your wallet to connect it to the DApp.
+
+### 2. Ensure You're on the Local Network
+
+1. Open your wallet (e.g., MetaMask) and check the network selection.
+2. Make sure you're connected to your local network (Hardhat node running on `http://localhost:8545`).
+3. If not on the correct network, add a new network with these details:
+   - Network Name: Hardhat Local
+   - New RPC URL: http://localhost:8545
+   - Chain ID: 31337
+   - Currency Symbol: ETH
+
+### 3. Explore and Interact
+
+1. Once connected and on the correct network, you should see your wallet address and be able to interact with the DApp.
+2. Explore all the Oware game features thoroughly:
+   - Start a new challenge
+   - Start a new  tournament
+   - Make moves in the game
+   - View your game profile
+   - Check out any leaderboards 
+
+3. Play multiple games to get a full experience of the DApp's functionality.
+4. Test all available features and interactions to ensure everything is working as expected.
+
+
+## Optional: Deploying the Oware NFT Contract
+
+
+1. **Open a new terminal and open the oware NFT rewards Folder**
+   - `cd` into the `oware-nft` folder.
+
+2. **Install Dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Set Up Environment Variables**
+   - Create a `.env` file with the following content:
+     ```
+     WALLET_KEY=<your_wallet_private_key>
+     ```
+
+4. **Deploy Locally**
+   - Start a local node:
+     ```bash
+     npx hardhat node --port 8546
+     ```
+   - Deploy the contract locally:
+     ```bash
+     npx hardhat ignition deploy ./ignition/modules/OwareNFTReward.ts --network base-local
+     ```
+
+5. **Interact with the NFT Contract (if applicable)**
+   - After deployment, return to the DApp frontend.
+   - Look for any new sections or features related to NFT rewards or minting.
 
 ## Game Setup
 
@@ -62,122 +182,6 @@ Our version of Oware enhances the traditional gameplay with several unique featu
 
 ## Project Documentation
 
-### Developer and User Guides
-
-# Project Setup and Running Guide
-
-This guide provides instructions for setting up and running the backend, relayer, frontend, and Oware Rewards contract of the project locally.
-
-## Table of Contents
-
-- [Running the Backend](#running-the-backend)
-- [Running the Frontend](#running-the-frontend)
-- [Running the Oware NFT Contract](#running-the-nebula-contract)
-
-## Running the Backend
-
-1. **Navigate to the App Folder**
-
-   - Open your terminal and `cd` into the `oware-dapp` folder.
-
-
-2. **Build and Run the Application**
-
-   - Run the following commands:
-     ```bash
-     cartesi build
-     cartesi run
-     ```
-
-
-
-## Running the Frontend
-
-1. **Navigate to the Frontend Folder**
-
-   `cd` into the `oware-frontend` folder.
-
-2. **Install Dependencies**
-
-   - Run the following command:
-
-     ```bash
-     npm install
-     ```
-
-3. **Set Up Environment Variables**
-
-   - Create a `.env` file with the following details:
-
-     ```
-     VITE_MODE=local
-     ```
-
-
-
-4. **Start the Frontend**
-
-   - Run the following command:
-
-     ```bash
-     npm run dev
-     ```
-
-## Running the Oware NFT Rewards Contract
-
-1. **Navigate to the Dynamic_NFT Folder**
-
-   - `cd` into the `oware-nft` folder.
-
-2. **Install Dependencies**
-
-   - Run the following command:
-
-     ```bash
-     npm install
-     ```
-
-3. **Set Up Environment Variables**
-
-   - Create a `.env` file with the following details:
-
-     ```
-     WALLET_KEY=<your_wallet_private_key>
-
-     ```
-
-4. **Deploy Locally**
-
-   - Start a local node by running:
-
-     ```bash
-     npx hardhat node --port 8546
-     ```
-
-   - Deploy the contract locally and run the scripts:
-
-     ```bash
-     npx hardhat ignition deploy ./ignition/modules/OwareNFTReward.ts --network base-local
-     ```
-
-   - You should get an output similar to:
-
-     ```
-     Deployed Addresses
-
-     OwareNFTRewardModule#OwareNFTReward - 0x8464135c8F25Da09e49BC8782676a84730C318bC
-     ```
-
-     Copy and paste this URL into your browser.
-
-5. **Deploy to a Live Network**
-
-   - Ensure the necessary `.env` requirements are provided for the specific network.
-   - Deploy the contract to a live network (e.g., base-sepolia) by running:
-
-     ```bash
-          npx hardhat ignition deploy ./ignition/modules/OwareNFTReward.ts --network base-sepolia
-     ```
 
 <br>
 <br>
